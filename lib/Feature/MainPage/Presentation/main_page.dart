@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:white_board/Core/Constants/Color/color_palette.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -10,8 +11,22 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onPanUpdate: (DragUpdateDetails detail) {},
+    return Scaffold(
+      
+      
+      body: Column(
+        children: [
+          Container(
+          width: 120,
+          decoration: BoxDecoration(
+            color: TColors.light,
+          ),
+          child: Row(
+            children: [Container()],
+          ),
+        )
+        ],
+      ),
     );
   }
 }
