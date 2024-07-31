@@ -8,6 +8,6 @@ class Rectangle extends Shapes {
     super.borderRadius,
     super.child,
     super.position,
-    super.isSelected
+  
   });
 }

@@ -39,6 +39,7 @@ dependencies:
   get: ^4.6.6
   connectivity_plus: ^6.0.4
   url_launcher: ^6.3.0
+  iconsax: ^0.0.8
 
 dev_dependencies:
   flutter_test:

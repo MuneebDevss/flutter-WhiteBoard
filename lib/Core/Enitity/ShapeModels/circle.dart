@@ -9,6 +9,6 @@ class Circle extends Shapes {
     super.borderRadius=50,
     super.child,
     super.position,
-    super.isSelected
+    
   });
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class Shapes {
-  bool isSelected;
+  
   double height;
   double width;
   double stroke;
@@ -17,5 +17,5 @@ class Shapes {
       String? backgroundColor,
       double? borderRadius,
       Widget? child,
-      this.isSelected=false});
+      });
 }
