@@ -5,7 +5,7 @@ import 'package:white_board/Feature/MainPage/Entities/selection_container.dart';
 import '../../../Core/Enitity/shape.dart';
 
 class MainPageController {
-  final List<Shapes> shapes = [];
+  List<Shapes> shapes = [];
   int selectedContainerIndex = -1;
   int selectedShape = -1;
 
@@ -35,66 +35,82 @@ class MainPageController {
       button: const Icon(Icons.image),
     ),
   ];
-  Shapes makeShape() {
-    return Shapes();
+
+  void storeTap(int index) {
+    if (selectedContainerIndex == 6) //Eraser is selected
+    {
+      if (selectedShape == index) {
+        shapes.removeAt(selectedShape);
+        if (shapes.isEmpty) {
+          shapes = [];
+          selectedShape = -1;
+        }
+        print(shapes.length);
+      } else if (selectedShape != index) //already not selected
+      {
+        selectedShape = index;
+      } else {
+        index = -1;
+      }
+    }
+    if (selectedShape != index) //already not selected
+    {
+      selectedShape = index;
+    } else {
+      index = -1;
+    }
   }
 
   void storeTapDownPosition(TapDownDetails details) {
     //if not drawing any shape
-    if (selectedContainerIndex == -1 || selectedContainerIndex == 7) {
+    if (selectedContainerIndex == -1 || selectedContainerIndex == 6) {
       //tapped on a shape
-      for (int index = 0; index < shapes.length; index++) {
-        if (shapes[index].position == details.globalPosition) {
-          if (selectedContainerIndex == 7) //Eraser is selected
-          {
-          } else if (selectedContainerIndex != index) //already not selected
-          {
-            selectedContainerIndex = index;
-          } else {
-            index = -1;
-          }
-        }
-      }
-    } else {
+    } else if (selectedContainerIndex == 0) {
       Shapes shape = Shapes();
-      shape.position = details.globalPosition;
+      shape.width = 50;
+      shape.height = 50;
+      shape.backgroundColor = Colors.black;
+      shape.position = Offset(
+          details.globalPosition.dx - 50, details.globalPosition.dy - 250);
       shapes.add(shape);
     }
   }
 
   void storePanUpdatePosition(DragUpdateDetails details) {
     Offset position = details.globalPosition;
-    if (selectedShape != -1) {
+    if (selectedShape == -1) {
       Shapes shape = shapes[selectedShape];
       //handling shape size and drag and drop
       handleShapeSizing(shape, position);
     }
     // handling shape making
-    else if (selectedContainerIndex != -1) {
+    else if (selectedContainerIndex == 0) {
       makeRectangle(details);
     }
   }
 
   void makeRectangle(DragUpdateDetails details) {
-    int length = shapes.length;
-    print(length);
-    if (details.globalPosition.dx - shapes[length].position.dx > 0) {
-      shapes[length].width =
-          details.globalPosition.dx - shapes[length].position.dx;
+    print('object');
+    int length = shapes.length - 1;
+    double dx = details.globalPosition.dx;
+    double dy = details.globalPosition.dy;
+    if (dx - shapes[length].position.dx > 0) {
+      shapes[length].mirrorY = 0;
+      shapes[length].width = dx - shapes[length].position.dx;
     } else {
-      shapes[length].width =
-          shapes[length].position.dx - details.globalPosition.dx;
-      shapes[length].position =
-          Offset(details.globalPosition.dx, shapes[length].position.dy);
+      shapes[length].mirrorY = -180;
+      shapes[length].width = -1 * (dx - shapes[length].position.dx);
     }
-    if (details.globalPosition.dy - shapes[length].position.dy > 0) {
-      shapes[length].width =
-          details.globalPosition.dy - shapes[length].position.dy;
+    if (dy - shapes[length].position.dy + shapes[length].height > 0) {
+      shapes[length].mirrorY = 0;
+      shapes[length].height = (dy / 2 - shapes[length].position.dy) > 0
+          ? dy / 2 - shapes[length].position.dy
+          : dy - shapes[length].position.dy;
     } else {
-      shapes[length].width =
-          shapes[length].position.dy - details.globalPosition.dy;
-      shapes[length].position =
-          Offset(details.globalPosition.dy, shapes[length].position.dy);
+      shapes[length].mirrorY = 180;
+      shapes[length].height = -1 * (dy / 2 - shapes[length].position.dy) > 0
+          ? -1 * (dy / 2 - shapes[length].position.dy)
+          : -1 * (dy - shapes[length].position.dy);
     }
   }
 

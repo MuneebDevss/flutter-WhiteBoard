@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:white_board/Core/Constants/Color/color_palette.dart';
 import 'package:white_board/Core/DeviceUtils/device_utils.dart';
 import 'package:white_board/Core/Enitity/shape.dart';
@@ -14,6 +15,7 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   late MainPageController controller;
+
   @override
   void initState() {
     controller = MainPageController();
@@ -28,78 +30,125 @@ class _MainPageState extends State<MainPage> {
       appBar: AppBar(),
       drawer: const Drawer(),
       body: Column(
-
         children: [
-          const SizedBox(width: double.infinity,),
+          const SizedBox(
+            width: double.infinity,
+          ),
           Container(
             alignment: Alignment.center,
             width: screenWidth - (screenWidth / 4),
             decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                boxShadow: const [
-                  BoxShadow(
-                    blurRadius: 5,
-                    color: TColors.grey,
-                    blurStyle: BlurStyle.outer,
-                    offset: Offset(0, 1),
-                  )
-                ]),
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: const [
+                BoxShadow(
+                  blurRadius: 5,
+                  color: TColors.grey,
+                  blurStyle: BlurStyle.outer,
+                  offset: Offset(0, 1),
+                )
+              ],
+            ),
             child: Wrap(
               spacing: 12,
               children: List.generate(
-                  controller.selectedContainer.length,
-                  (index) => GestureDetector(
-                        onTap: () {
-                          controller.selectedContainerIndex == index
-                              ? controller.selectedContainerIndex = -1
-                              : controller.selectedContainerIndex = index;
-                          setState(() {});
-                        },
-                        child: SelectedShape(
-                            screenHeight: screenHeight,
-                            button:
-                                controller.selectedContainer[index].button,
-                            isSelected:
-                                controller.selectedContainerIndex == index),
-                      )),
+                controller.selectedContainer.length,
+                (index) => GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      controller.selectedContainerIndex == index
+                          ? controller.selectedContainerIndex = -1
+                          : controller.selectedContainerIndex = index;
+                    });
+                  },
+                  child: SelectShape(
+                    screenHeight: screenHeight,
+                    button: controller.selectedContainer[index].button,
+                    isSelected: controller.selectedContainerIndex == index,
+                  ),
+                ),
+              ),
             ),
           ),
           Expanded(
             child: GestureDetector(
               onTapDown: (details) {
                 controller.storeTapDownPosition(details);
-              setState(() {
-                
-              });
+                setState(() {});
               },
               onPanUpdate: (details) {
                 controller.storePanUpdatePosition(details);
-              setState(() {
-                
-              });
+                setState(() {});
               },
-              child: Stack(
-                children: List.generate(controller.shapes.length, (index) {
-                  Shapes shape = controller.shapes[index];
-                  return Positioned(
-                      top: shape.position.dx,
-                      left: shape.position.dy,
-                      child: AnimatedContainer(
-                        decoration: BoxDecoration(
-                          borderRadius: shape.borderRadius == null
-                              ? BorderRadius.circular(shape.borderRadius!)
-                              : null,
+              child: Container(
+                width: double.infinity,
+                height: double.infinity,
+                color: Colors.transparent,
+                child: Stack(
+                  children: List.generate(controller.shapes.length, (index) {
+                    Shapes shape = controller.shapes[index];
+
+                    return Positioned(
+                      top: screenHeight > screenWidth
+                          ? shape.position.dy
+                          : shape.position.dx - 50,
+                      left: screenHeight > screenWidth
+                          ? shape.position.dx
+                          : shape.position.dy,
+                      child: GestureDetector(
+                        onTap: () {
+                          controller.storeTap(index);
+                          setState(() {});
+                        },
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Transform(
+                             transform:Matrix4(
+              1,0,0,0,
+              0,1,0,0,
+              0,0,1,0,
+              0,0,0,1,
+          )..rotateX(shape.mirrorY)..rotateY(shape.mirrorY),
+          alignment: FractionalOffset.center,
+                            child: ShapeItem(shape: shape, controller: controller, index: index,)),
                         ),
-                        width: shape.width,
-                        height: shape.height,
-                        duration: const Duration(milliseconds: 100),
-                      ));
-                }),
+                      ),
+                    );
+                  }),
+                ),
               ),
             ),
-          )
+          ),
         ],
       ),
+    );
+  }
+}
+
+class ShapeItem extends StatelessWidget {
+  const ShapeItem({
+    super.key,
+    required this.shape,
+    required this.controller, required this.index,
+  });
+
+  final Shapes shape;
+  final int index;
+  final MainPageController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      decoration: BoxDecoration(
+          borderRadius: shape.borderRadius == null
+              ? null
+              : BorderRadius.circular(shape.borderRadius!),
+          border: Border.all(
+              color:
+                  controller.selectedShape == index ? Colors.blue : Colors.grey,
+              width: 2)),
+      width: shape.width,
+      height: shape.height,
+      duration: const Duration(milliseconds: 100),
     );
   }
 }
