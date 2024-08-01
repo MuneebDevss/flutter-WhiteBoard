@@ -44,8 +44,7 @@ class _MainPageState extends State<MainPage> {
                   blurRadius: 5,
                   color: TColors.grey,
                   blurStyle: BlurStyle.outer,
-                  offset: Offset(0, 1),
-                )
+                  offset: Offset(0, 1),)
               ],
             ),
             child: Wrap(

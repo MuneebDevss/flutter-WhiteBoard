@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:white_board/Core/Enitity/ShapeModels/circle.dart';
+import 'package:white_board/Core/Enitity/ShapeModels/rectangle.dart';
 import 'package:white_board/Feature/MainPage/Entities/selection_container.dart';
 
 import '../../../Core/Enitity/shape.dart';
@@ -45,7 +47,6 @@ class MainPageController {
           shapes = [];
           selectedShape = -1;
         }
-        print(shapes.length);
       } else if (selectedShape != index) //already not selected
       {
         selectedShape = index;
@@ -66,12 +67,21 @@ class MainPageController {
     if (selectedContainerIndex == -1 || selectedContainerIndex == 6) {
       //tapped on a shape
     } else if (selectedContainerIndex == 0) {
-      Shapes shape = Shapes();
+      Shapes shape = Rectangle();
       shape.width = 50;
       shape.height = 50;
       shape.backgroundColor = Colors.black;
-      shape.position = Offset(
-          details.globalPosition.dx - 50, details.globalPosition.dy - 250);
+      shape.position =
+          Offset(details.globalPosition.dx, details.globalPosition.dy - 200);
+      shapes.add(shape);
+    } else if (selectedContainerIndex == 2) {
+      Shapes shape = Circle();
+      shape.width = 50;
+      shape.height = 50;
+      shape.borderRadius = 50;
+      shape.backgroundColor = Colors.black;
+      shape.position =
+          Offset(details.globalPosition.dx, details.globalPosition.dy - 200);
       shapes.add(shape);
     }
   }
@@ -86,12 +96,14 @@ class MainPageController {
     // handling shape making
     else if (selectedContainerIndex == 0) {
       makeRectangle(details);
+    } else if (selectedContainerIndex == 1) {
+      makeCircle(details);
     }
   }
 
   void makeRectangle(DragUpdateDetails details) {
-    print('object');
     int length = shapes.length - 1;
+
     double dx = details.globalPosition.dx;
     double dy = details.globalPosition.dy;
     if (dx - shapes[length].position.dx > 0) {
@@ -136,6 +148,34 @@ class MainPageController {
     else if (shape.position.dx + shape.width == position.dx &&
         shape.position.dy == position.dy) {
       //TODO
+    }
+  }
+
+  void makeCircle(DragUpdateDetails details) {
+    int length = shapes.length - 1;
+
+    double dx = details.globalPosition.dx;
+    double dy = details.globalPosition.dy;
+    if (dx - shapes[length].position.dx > 0) {
+      shapes[length].mirrorY = 0;
+      shapes[length].width = dx - shapes[length].position.dx;
+      
+    } else {
+      shapes[length].mirrorY = -180;
+      shapes[length].width = -1 * (dx - shapes[length].position.dx);
+    }
+    if (dy - shapes[length].position.dy + shapes[length].height > 0) {
+      shapes[length].mirrorY = 0;
+      shapes[length].height = (dy / 2 - shapes[length].position.dy) > 0
+          ? dy / 2 - shapes[length].position.dy
+          : dy - shapes[length].position.dy;
+          shapes[length].borderRadius = dy/2;
+    } else {
+      shapes[length].mirrorY = 180;
+      shapes[length].height = -1 * (dy / 2 - shapes[length].position.dy) > 0
+          ? -1 * (dy / 2 - shapes[length].position.dy)
+          : -1 * (dy - shapes[length].position.dy);
+          shapes[length].borderRadius = -1*dy/2;
     }
   }
 }
