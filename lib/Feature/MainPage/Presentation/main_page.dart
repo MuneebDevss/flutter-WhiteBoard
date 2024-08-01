@@ -4,6 +4,8 @@ import 'package:white_board/Core/Constants/Color/color_palette.dart';
 import 'package:white_board/Core/DeviceUtils/device_utils.dart';
 import 'package:white_board/Core/Enitity/shape.dart';
 import 'package:white_board/Feature/MainPage/Controller/main_page_controller.dart';
+import 'package:white_board/Feature/MainPage/Entities/focus_manager.dart';
+import 'package:white_board/Feature/MainPage/Presentation/Widgets/my_textfield.dart';
 import 'package:white_board/Feature/MainPage/Presentation/Widgets/selected_shape.dart';
 
 class MainPage extends StatefulWidget {
@@ -15,6 +17,14 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   late MainPageController controller;
+  FocusNode textFieldFocus = FocusNode();
+  @override
+  void dispose() {
+    for (FocusEntity focusNode in controller.focusNodes) {
+      focusNode.node.dispose();
+    }
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -44,7 +54,8 @@ class _MainPageState extends State<MainPage> {
                   blurRadius: 5,
                   color: TColors.grey,
                   blurStyle: BlurStyle.outer,
-                  offset: Offset(0, 1),)
+                  offset: Offset(0, 1),
+                )
               ],
             ),
             child: Wrap(
@@ -71,6 +82,7 @@ class _MainPageState extends State<MainPage> {
           Expanded(
             child: GestureDetector(
               onTapDown: (details) {
+                
                 controller.storeTapDownPosition(details);
                 setState(() {});
               },
@@ -89,7 +101,7 @@ class _MainPageState extends State<MainPage> {
                     return Positioned(
                       top: screenHeight > screenWidth
                           ? shape.position.dy
-                          : shape.position.dx - 50,
+                          : shape.position.dx - 100,
                       left: screenHeight > screenWidth
                           ? shape.position.dx
                           : shape.position.dy,
@@ -100,15 +112,11 @@ class _MainPageState extends State<MainPage> {
                         },
                         child: Align(
                           alignment: Alignment.centerLeft,
-                          child: Transform(
-                             transform:Matrix4(
-              1,0,0,0,
-              0,1,0,0,
-              0,0,1,0,
-              0,0,0,1,
-          )..rotateX(shape.mirrorY)..rotateY(shape.mirrorY),
-          alignment: FractionalOffset.center,
-                            child: ShapeItem(shape: shape, controller: controller, index: index,)),
+                          child: ShapeItem(
+                            shape: shape,
+                            controller: controller,
+                            index: index,
+                          ),
                         ),
                       ),
                     );
@@ -127,7 +135,8 @@ class ShapeItem extends StatelessWidget {
   const ShapeItem({
     super.key,
     required this.shape,
-    required this.controller, required this.index,
+    required this.controller,
+    required this.index,
   });
 
   final Shapes shape;
@@ -148,6 +157,7 @@ class ShapeItem extends StatelessWidget {
       width: shape.width,
       height: shape.height,
       duration: const Duration(milliseconds: 100),
+      child: shape.child,
     );
   }
 }
