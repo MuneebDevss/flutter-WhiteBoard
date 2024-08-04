@@ -1,13 +1,13 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:white_board/Core/Constants/Color/color_palette.dart';
 import 'package:white_board/Core/CustomClipper/line_clipper.dart';
 import 'package:white_board/Core/DeviceUtils/device_utils.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/line.dart';
 import 'package:white_board/Core/Enitity/shape.dart';
 import 'package:white_board/Feature/MainPage/Controller/main_page_controller.dart';
-import 'package:white_board/Feature/MainPage/Entities/focus_manager.dart';
 import 'package:white_board/Feature/MainPage/Presentation/Widgets/selected_shape.dart';
+import 'dart:io' show platform;
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -17,6 +17,8 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
+  final bool isWeb = kIsWeb;
+
   late MainPageController controller;
   @override
   void dispose() {
@@ -33,13 +35,14 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     double screenWidth = TDeviceUtils.getScreenWidth(context);
     double screenHeight = TDeviceUtils.getScreenHeight(context);
+
     return Scaffold(
       appBar: AppBar(),
       drawer: const Drawer(),
       body: Column(
         children: [
           const SizedBox(
-            width: double.infinity,
+            width: double.maxFinite,
           ),
           Container(
             alignment: Alignment.center,
@@ -76,72 +79,160 @@ class _MainPageState extends State<MainPage> {
               ),
             ),
           ),
-          Expanded(
-            child: GestureDetector(
-              onTapDown: (details) {
-                controller.storeTapDownPosition(details);
-                setState(() {});
-              },
-              onPanUpdate: (details) {
-                controller.storePanUpdatePosition(details);
-                setState(() {});
-              },
-              child: Container(
-                width: double.infinity,
-                height: double.infinity,
-                color: Colors.transparent,
-                child: Stack(
-                  children: List.generate(controller.shapes.length, (index) {
-                    Shapes shape = controller.shapes[index];
-                    if (shape is Line) {
-                      return Positioned(
-                        top: screenHeight > screenWidth
-                            ? shape.position.dy
-                            : shape.position.dx - 100,
-                        left: screenHeight > screenWidth
-                            ? shape.position.dx
-                            : shape.position.dy,
-                        child: GestureDetector(
-                          onTap: () {
-                            controller.storeTap(index);
-                            setState(() {});
-                          },
-                          child: LineItem(
-                            shape: shape,
-                            controller: controller,
-                            index: index,
-                          ),
-                        ),
-                      );
-                    } else {
-                      return Positioned(
-                        top: screenHeight > screenWidth
-                            ? shape.position.dy
-                            : shape.position.dx - 100,
-                        left: screenHeight > screenWidth
-                            ? shape.position.dx
-                            : shape.position.dy,
-                        child: GestureDetector(
-                          onTap: () {
-                            controller.storeTap(index);
-                            setState(() {});
-                          },
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: ShapeItem(
-                              shape: shape,
-                              controller: controller,
-                              index: index,
-                            ),
-                          ),
-                        ),
-                      );
-                    }
-                  }),
-                ),
+          Listener(
+            onPointerDown: (event) {
+              controller.storePointerDownPosition(event, context);
+              
+              setState(() {});
+            },
+            child: Container(
+              color: Colors.transparent,
+              width: screenWidth,
+              height: 310,
+              child: Stack(
+                children: List.generate(controller.shapes.length, (index) {
+                  //print("${controller.shapes[index].position}shapes position");
+                  Offset shape = controller.shapes[index].position;
+                  double w=controller.shapes[index].width;
+                  double h=controller.shapes[index].height;
+                  return Positioned.fromRect(
+                    rect:  Rect.fromLTRB(
+                        shape.dx, shape.dy, shape.dx+w, shape.dy+h),
+                    child: Container(
+                      color: Colors.amber,
+                    ),
+                  );
+                }),
               ),
             ),
-          ),
+          )
+          // if (isWeb)
+
+          //   Listener(
+          //     onPointerDown: (details) {
+          //       controller.storePointerDownPosition(details, context);
+
+          //       setState(() {});
+          //     },
+          //     child: Container(
+          //       width: screenWidth,
+          //       height: 320,
+          //        color: Colors.transparent,
+          //       child: Stack(
+          //         children: List.generate(controller.shapes.length, (index) {
+          //           Shapes shape = controller.shapes[index];
+          //           if (shape is Line) {
+          //             return Positioned(
+          //               top: shape.position.dy,
+
+          //               left: shape.position.dx,
+          //               child: GestureDetector(
+          //                 onTap: () {
+          //                   controller.storeTap(index);
+          //                   setState(() {});
+          //                 },
+          //                 child: LineItem(
+          //                   shape: shape,
+          //                   controller: controller,
+          //                   index: index,
+          //                 ),
+          //               ),
+          //             );
+          //           } else {
+          //             return Positioned(
+          //               top: screenHeight > screenWidth
+          //                   ? shape.position.dy
+          //                   : shape.position.dx - 100,
+          //               left: screenHeight > screenWidth
+          //                   ? shape.position.dx
+          //                   : shape.position.dy,
+          //               child: GestureDetector(
+          //                 onTap: () {
+          //                   controller.storeTap(index);
+          //                   setState(() {});
+          //                 },
+          //                 child: Align(
+          //                   alignment: Alignment.centerLeft,
+          //                   child: ShapeItem(
+          //                     shape: shape,
+          //                     controller: controller,
+          //                     index: index,
+          //                   ),
+          //                 ),
+          //               ),
+          //             );
+          //           }
+          //         }),
+          //       ),
+          //     ),
+          //   ),
+          // if (!isWeb)
+          //   Expanded(
+          //     child: GestureDetector(
+          //       onTapDown: (details) {
+          //         controller.storeTapDownPosition(details);
+          //         setState(() {});
+          //       },
+          //       onPanUpdate: (details) {
+          //         controller.storePanUpdatePosition(details);
+          //         setState(() {});
+          //       },
+          //       child: Container(
+          //         width: double.infinity,
+          //         height: double.infinity,
+          //         color: Colors.transparent,
+          //         child: Stack(
+          //           children: List.generate(controller.shapes.length, (index) {
+          //             Shapes shape = controller.shapes[index];
+          //             if (shape is Line) {
+          //               return Positioned(
+          //                 top: screenHeight > screenWidth
+          //                     ? shape.position.dy
+          //                     : shape.position.dx - 100,
+          //                 left: screenHeight > screenWidth
+          //                     ? shape.position.dx
+          //                     : shape.position.dy,
+          //                 child: GestureDetector(
+          //                   onTap: () {
+          //                     controller.storeTap(index);
+          //                     setState(() {});
+          //                   },
+          //                   child: LineItem(
+          //                     shape: shape,
+          //                     controller: controller,
+          //                     index: index,
+          //                   ),
+          //                 ),
+          //               );
+          //             } else {
+          //               return Positioned(
+          //                 top: screenHeight > screenWidth
+          //                     ? shape.position.dy
+          //                     : shape.position.dx - 100,
+          //                 left: screenHeight > screenWidth
+          //                     ? shape.position.dx
+          //                     : shape.position.dy,
+          //                 child: GestureDetector(
+          //                   onTap: () {
+          //                     controller.storeTap(index);
+          //                     setState(() {});
+          //                   },
+          //                   child: Align(
+          //                     alignment: Alignment.centerLeft,
+          //                     child: ShapeItem(
+          //                       shape: shape,
+          //                       controller: controller,
+          //                       index: index,
+          //                     ),
+          //                   ),
+          //                 ),
+          //               );
+          //             }
+          //           }),
+          //         ),
+          //       ),
+          //     ),
+          //   ),
         ],
       ),
     );
@@ -164,6 +255,7 @@ class ShapeItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       decoration: BoxDecoration(
+          color: shape.backgroundColor,
           borderRadius: shape.borderRadius == null
               ? null
               : BorderRadius.circular(shape.borderRadius!),

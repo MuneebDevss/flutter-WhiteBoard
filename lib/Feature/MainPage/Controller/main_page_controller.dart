@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 import 'package:iconsax/iconsax.dart';
-import 'package:white_board/Core/CustomClipper/line_clipper.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/circle.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/line.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/rectangle.dart';
-import 'package:white_board/Feature/MainPage/Entities/focus_manager.dart';
 import 'package:white_board/Feature/MainPage/Entities/selection_container.dart';
 import 'package:white_board/Feature/MainPage/Presentation/Widgets/my_textfield.dart';
 import '../../../Core/Enitity/shape.dart';
@@ -93,7 +90,7 @@ class MainPageController {
 
       shape.backgroundColor = Colors.black;
       shape.position = Offset(
-          details.globalPosition.dx -90, details.globalPosition.dy-270);
+          details.globalPosition.dx - 90, details.globalPosition.dy - 270);
       shapes.add(shape);
     } else if (selectedContainerIndex == 4) {
       try {
@@ -114,6 +111,53 @@ class MainPageController {
     }
   }
 
+  void storePointerDownPosition(
+      PointerDownEvent offsets, BuildContext context) {
+    final box = context.findRenderObject() as RenderBox;
+    final details = box.globalToLocal(offsets.position);
+    print("${offsets.localPosition}tap");
+    //if not drawing any shape
+    if (selectedContainerIndex == -1 || selectedContainerIndex == 6) {
+      //tapped on a shape
+    } else if (selectedContainerIndex == 0) {
+      Shapes shape = Rectangle();
+      shape.width = 50;
+      shape.height = 50;
+      shape.backgroundColor = Colors.black;
+      shape.position = Offset(details.dx, details.dy-100);
+      shapes.add(shape);
+    } else if (selectedContainerIndex == 1) {
+      Shapes shape = Circle();
+      shape.width = 50;
+      shape.height = 50;
+      shape.borderRadius = 50;
+      shape.backgroundColor = Colors.black;
+      shape.position = Offset(details.dx, details.dy - 200);
+      shapes.add(shape);
+    } else if (selectedContainerIndex == 2) {
+      Shapes shape = Line();
+
+      shape.position = Offset(details.dx - 90, details.dy - 270);
+      shapes.add(shape);
+    } else if (selectedContainerIndex == 4) {
+      try {
+        Shapes shape = Rectangle();
+        shape.width = 100;
+        shape.height = 50;
+        shape.backgroundColor = Colors.black;
+        shape.child = const MyTextfield(
+          style: TextStyle(fontSize: 12),
+          fontSize: 12,
+        );
+        shape.position = Offset(details.dx, details.dy - 200);
+      } catch (e) {
+        ScaffoldMessenger.of(Get.context!)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    }
+    
+  }
+
   void storePanUpdatePosition(DragUpdateDetails details) {
     Offset position = details.globalPosition;
     if (selectedContainerIndex == -1) {
@@ -128,6 +172,20 @@ class MainPageController {
       makeCircle(details);
     } else if (selectedContainerIndex == 2) {
       makeLine(details);
+    } else if (selectedContainerIndex == 5) {
+      try {
+        Shapes shape = Circle();
+        shape.width = 10;
+        shape.height = 10;
+        shape.borderRadius = 20;
+        shape.backgroundColor = Colors.black;
+        shape.position =
+            Offset(details.globalPosition.dx, details.globalPosition.dy - 200);
+        shapes.add(shape);
+      } catch (e) {
+        ScaffoldMessenger.of(Get.context!)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
+      }
     }
   }
 
@@ -201,7 +259,6 @@ class MainPageController {
   void makeLine(DragUpdateDetails details) {
     int length = shapes.length - 1;
     Offset pos = details.globalPosition;
-
-    shapes[length].mirrorPosition = Offset(pos.dx-170,pos.dy -350);
+    shapes[length].mirrorPosition = Offset(pos.dx - 170, pos.dy - 350);
   }
 }
