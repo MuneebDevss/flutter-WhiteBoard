@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:white_board/Core/Constants/Color/color_palette.dart';
 import 'package:white_board/Core/CustomClipper/line_clipper.dart';
 import 'package:white_board/Core/DeviceUtils/device_utils.dart';
-import 'package:white_board/Core/Enitity/ShapeModels/line.dart';
+import 'package:white_board/Core/Enitity/ShapeModels/circle.dart';
+import 'package:white_board/Core/Enitity/ShapeModels/rectangle.dart';
 import 'package:white_board/Core/Enitity/shape.dart';
 import 'package:white_board/Feature/MainPage/Controller/main_page_controller.dart';
 import 'package:white_board/Feature/MainPage/Presentation/Widgets/selected_shape.dart';
@@ -79,30 +80,24 @@ class _MainPageState extends State<MainPage> {
               ),
             ),
           ),
-          Listener(
-            onPointerDown: (event) {
-              controller.storePointerDownPosition(event, context);
-              
-              setState(() {});
-            },
-            child: Container(
-              color: Colors.transparent,
-              width: screenWidth,
-              height: 310,
-              child: Stack(
-                children: List.generate(controller.shapes.length, (index) {
-                  //print("${controller.shapes[index].position}shapes position");
-                  Offset shape = controller.shapes[index].position;
-                  double w=controller.shapes[index].width;
-                  double h=controller.shapes[index].height;
-                  return Positioned.fromRect(
-                    rect:  Rect.fromLTRB(
-                        shape.dx, shape.dy, shape.dx+w, shape.dy+h),
-                    child: Container(
-                      color: Colors.amber,
-                    ),
-                  );
-                }),
+          Expanded(
+            child: Listener(
+              onPointerDown: (event) {
+                controller.storePointerDownPosition(event, context);
+
+                setState(() {});
+              },
+              onPointerMove: (event) {
+                controller.storePointerUpdatePosition(event);
+                setState(() {});
+              },
+              child: Container(
+                color: Colors.transparent,
+                width: screenWidth,
+                height: double.infinity,
+                child: Stack(
+                  children: shapeFactory(),
+                ),
               ),
             ),
           )
@@ -111,7 +106,6 @@ class _MainPageState extends State<MainPage> {
           //   Listener(
           //     onPointerDown: (details) {
           //       controller.storePointerDownPosition(details, context);
-
           //       setState(() {});
           //     },
           //     child: Container(
@@ -237,6 +231,34 @@ class _MainPageState extends State<MainPage> {
       ),
     );
   }
+
+  List<Widget> shapeFactory() {
+    return List.generate(controller.shapes.length, (index) {
+      Shapes shape = controller.shapes[index];
+      Offset pos = shape.lT;
+      Offset rB = shape.rB;
+      if (shape is Rectangle) {
+        return Positioned.fromRect(
+          rect: Rect.fromLTRB(pos.dx, pos.dy, rB.dx, rB.dy),
+          child: Container(
+            color: Colors.amber,
+          ),
+        );
+      } else if (shape is Circle) {
+        return Positioned.fromRect(
+          rect: Rect.fromLTRB(pos.dx, pos.dy, rB.dx, rB.dy),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.amber,
+              borderRadius: BorderRadius.circular(shape.borderRadius ?? 0),
+            ),
+          ),
+        );
+      } else
+        {return 
+        Container();}
+    });
+  }
 }
 
 class ShapeItem extends StatelessWidget {
@@ -263,8 +285,6 @@ class ShapeItem extends StatelessWidget {
               color:
                   controller.selectedShape == index ? Colors.blue : Colors.grey,
               width: 2)),
-      width: shape.width,
-      height: shape.height,
       duration: const Duration(milliseconds: 100),
       child: shape.child,
     );
@@ -286,17 +306,16 @@ class LineItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: LinePainter(
-          startposition: shape.position, endPosition: shape.mirrorPosition),
+      painter: LinePainter(startposition: shape.lT, endPosition: shape.rB),
       child: Align(
         alignment: Alignment.center,
         child: SizedBox(
-          width: shape.position.dx > shape.mirrorPosition.dx
-              ? shape.position.dx - shape.mirrorPosition.dx
-              : shape.mirrorPosition.dx - shape.position.dx,
-          height: shape.position.dy > shape.mirrorPosition.dy
-              ? shape.position.dy - shape.mirrorPosition.dy
-              : shape.mirrorPosition.dy - shape.position.dy,
+          width: shape.lT.dx > shape.rB.dx
+              ? shape.lT.dx - shape.rB.dx
+              : shape.rB.dx - shape.lT.dx,
+          height: shape.lT.dy > shape.rB.dy
+              ? shape.lT.dy - shape.rB.dy
+              : shape.rB.dy - shape.lT.dy,
           child: Container(
             color: Colors.blue.withOpacity(0.3), // Optional: visual indication
           ),

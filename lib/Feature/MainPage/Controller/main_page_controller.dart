@@ -9,7 +9,8 @@ import 'package:white_board/Feature/MainPage/Presentation/Widgets/my_textfield.d
 import '../../../Core/Enitity/shape.dart';
 
 class MainPageController {
-  List<Shapes> shapes = [];
+  List<Shapes> shapes = [
+  ];
 
   int selectedContainerIndex = -1;
   int selectedShape = -1;
@@ -64,46 +65,43 @@ class MainPageController {
     }
   }
 
-  void storeTapDownPosition(TapDownDetails details) {
+  void storeTapDownPosition(TapDownDetails offsets, BuildContext context) {
+    final box = context.findRenderObject() as RenderBox;
+    final details = box.globalToLocal(offsets.localPosition);
     //if not drawing any shape
     if (selectedContainerIndex == -1 || selectedContainerIndex == 6) {
       //tapped on a shape
     } else if (selectedContainerIndex == 0) {
       Shapes shape = Rectangle();
-      shape.width = 50;
-      shape.height = 50;
+
       shape.backgroundColor = Colors.black;
-      shape.position =
-          Offset(details.globalPosition.dx, details.globalPosition.dy - 200);
+      shape.lT = Offset(details.dx, details.dy - 100);
+      shape.rB = Offset(details.dx, details.dy - 100);
       shapes.add(shape);
     } else if (selectedContainerIndex == 1) {
       Shapes shape = Circle();
-      shape.width = 50;
-      shape.height = 50;
       shape.borderRadius = 50;
       shape.backgroundColor = Colors.black;
-      shape.position =
-          Offset(details.globalPosition.dx, details.globalPosition.dy - 200);
+      shape.lT = Offset(details.dx, details.dy - 100);
+      shape.rB = Offset(details.dx, details.dy - 100);
+
       shapes.add(shape);
     } else if (selectedContainerIndex == 2) {
       Shapes shape = Line();
 
-      shape.backgroundColor = Colors.black;
-      shape.position = Offset(
-          details.globalPosition.dx - 90, details.globalPosition.dy - 270);
+      shape.lT = Offset(details.dx - 90, details.dy - 270);
       shapes.add(shape);
     } else if (selectedContainerIndex == 4) {
       try {
         Shapes shape = Rectangle();
-        shape.width = 100;
-        shape.height = 50;
+
         shape.backgroundColor = Colors.black;
         shape.child = const MyTextfield(
           style: TextStyle(fontSize: 12),
           fontSize: 12,
         );
-        shape.position =
-            Offset(details.globalPosition.dx, details.globalPosition.dy - 200);
+        shape.lT = Offset(details.dx, details.dy - 200);
+        shape.rB = Offset(details.dx, details.dy - 200);
       } catch (e) {
         ScaffoldMessenger.of(Get.context!)
             .showSnackBar(SnackBar(content: Text(e.toString())));
@@ -115,51 +113,49 @@ class MainPageController {
       PointerDownEvent offsets, BuildContext context) {
     final box = context.findRenderObject() as RenderBox;
     final details = box.globalToLocal(offsets.position);
-    print("${offsets.localPosition}tap");
     //if not drawing any shape
     if (selectedContainerIndex == -1 || selectedContainerIndex == 6) {
       //tapped on a shape
     } else if (selectedContainerIndex == 0) {
       Shapes shape = Rectangle();
-      shape.width = 50;
-      shape.height = 50;
+
       shape.backgroundColor = Colors.black;
-      shape.position = Offset(details.dx, details.dy-100);
+      shape.lT = Offset(details.dx, details.dy - 100);
+      shape.rB = Offset(details.dx, details.dy - 100);
       shapes.add(shape);
     } else if (selectedContainerIndex == 1) {
       Shapes shape = Circle();
-      shape.width = 50;
-      shape.height = 50;
       shape.borderRadius = 50;
       shape.backgroundColor = Colors.black;
-      shape.position = Offset(details.dx, details.dy - 200);
+      shape.lT = Offset(details.dx, details.dy - 100);
+      shape.rB = Offset(details.dx, details.dy - 100);
+
       shapes.add(shape);
     } else if (selectedContainerIndex == 2) {
       Shapes shape = Line();
 
-      shape.position = Offset(details.dx - 90, details.dy - 270);
+      shape.lT = Offset(details.dx - 90, details.dy - 270);
       shapes.add(shape);
     } else if (selectedContainerIndex == 4) {
       try {
         Shapes shape = Rectangle();
-        shape.width = 100;
-        shape.height = 50;
+
         shape.backgroundColor = Colors.black;
         shape.child = const MyTextfield(
           style: TextStyle(fontSize: 12),
           fontSize: 12,
         );
-        shape.position = Offset(details.dx, details.dy - 200);
+        shape.lT = Offset(details.dx, details.dy - 200);
+        shape.rB = Offset(details.dx, details.dy - 200);
       } catch (e) {
         ScaffoldMessenger.of(Get.context!)
             .showSnackBar(SnackBar(content: Text(e.toString())));
       }
     }
-    
   }
 
-  void storePanUpdatePosition(DragUpdateDetails details) {
-    Offset position = details.globalPosition;
+  void storePointerUpdatePosition(PointerMoveEvent details) {
+    Offset position = details.localPosition;
     if (selectedContainerIndex == -1) {
       Shapes shape = shapes[selectedShape];
       //handling shape size and drag and drop
@@ -167,98 +163,64 @@ class MainPageController {
     }
     // handling shape making
     else if (selectedContainerIndex == 0) {
-      makeRectangle(details);
+      makeRectangle(position);
     } else if (selectedContainerIndex == 1) {
-      makeCircle(details);
+      makeCircle(position);
     } else if (selectedContainerIndex == 2) {
-      makeLine(details);
-    } else if (selectedContainerIndex == 5) {
-      try {
-        Shapes shape = Circle();
-        shape.width = 10;
-        shape.height = 10;
-        shape.borderRadius = 20;
-        shape.backgroundColor = Colors.black;
-        shape.position =
-            Offset(details.globalPosition.dx, details.globalPosition.dy - 200);
-        shapes.add(shape);
-      } catch (e) {
-        ScaffoldMessenger.of(Get.context!)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
-      }
-    }
+      makeLine(position);
+    } else if (selectedContainerIndex == 5) {}
   }
 
-  void makeRectangle(DragUpdateDetails details) {
+  void makeRectangle(Offset details) {
     int length = shapes.length - 1;
-
-    double dx = details.globalPosition.dx;
-    double dy = details.globalPosition.dy;
-    if (dx - shapes[length].position.dx > 0) {
-      shapes[length].width = dx - shapes[length].position.dx;
-    } else {
-      shapes[length].width = -1 * (dx - shapes[length].position.dx);
-    }
-    if (dy - shapes[length].position.dy + shapes[length].height > 0) {
-      shapes[length].height = (dy / 2 - shapes[length].position.dy) > 0
-          ? dy / 2 - shapes[length].position.dy
-          : dy - shapes[length].position.dy;
-    } else {
-      shapes[length].height = -1 * (dy / 2 - shapes[length].position.dy) > 0
-          ? -1 * (dy / 2 - shapes[length].position.dy)
-          : -1 * (dy - shapes[length].position.dy);
-    }
+    shapes[length].rB = details;
+    // if (dx > shapes[length].position.dx) {
+    //   shapes[length].right = dx - shapes[length].position.dx;
+    // } else {
+    //   shapes[length].right = -1 * (dx - shapes[length].position.dx);
+    // }
+    // if (dy > shapes[length].position.dy + shapes[length].bottom) {
+    //   shapes[length].bottom = (dy / 2 - shapes[length].position.dy) > 0
+    //       ? dy / 2 - shapes[length].position.dy
+    //       : dy - shapes[length].position.dy;
+    // } else {
+    //   shapes[length].bottom = -1 * (dy / 2 - shapes[length].position.dy) > 0
+    //       ? -1 * (dy / 2 - shapes[length].position.dy)
+    //       : -1 * (dy - shapes[length].position.dy);
+    // }
   }
 
   void handleShapeSizing(Shapes shape, Offset position) {
     //tapped on bottom right
-    if (shape.position.dx + shape.width == position.dx &&
-        shape.position.dy + shape.height == position.dy) {
+    if (shape.lT.dx + shape.rB.dx == position.dx &&
+        shape.lT.dy + shape.rB.dy == position.dy) {
       //TODO
     }
     //tapped on bottom left
-    else if (shape.position.dx == position.dx &&
-        shape.position.dy + shape.height == position.dy) {
+    else if (shape.lT.dx == position.dx &&
+        shape.lT.dy + shape.rB.dy == position.dy) {
       //TODO
     }
     //tapped on top left
-    else if (shape.position.dx == position.dx &&
-        shape.position.dy == position.dy) {
+    else if (shape.lT.dx == position.dx && shape.lT.dy == position.dy) {
       //TODO
     }
     //tapped on top right
-    else if (shape.position.dx + shape.width == position.dx &&
-        shape.position.dy == position.dy) {
+    else if (shape.lT.dx + shape.rB.dx == position.dx &&
+        shape.lT.dy == position.dy) {
       //TODO
     }
   }
 
-  void makeCircle(DragUpdateDetails details) {
+  void makeCircle(Offset details) {
     int length = shapes.length - 1;
-
-    double dx = details.globalPosition.dx;
-    double dy = details.globalPosition.dy;
-    if (dx - shapes[length].position.dx > 0) {
-      shapes[length].width = dx - shapes[length].position.dx;
-    } else {
-      shapes[length].width = -1 * (dx - shapes[length].position.dx);
-    }
-    if (dy - shapes[length].position.dy + shapes[length].height > 0) {
-      shapes[length].height = (dy / 2 - shapes[length].position.dy) > 0
-          ? dy / 2 - shapes[length].position.dy
-          : dy - shapes[length].position.dy;
-      shapes[length].borderRadius = dy / 2;
-    } else {
-      shapes[length].height = -1 * (dy / 2 - shapes[length].position.dy) > 0
-          ? -1 * (dy / 2 - shapes[length].position.dy)
-          : -1 * (dy - shapes[length].position.dy);
-      shapes[length].borderRadius = -1 * dy / 2;
-    }
+    shapes[length].rB = details;
+    shapes[length].borderRadius = details.dy;
   }
 
-  void makeLine(DragUpdateDetails details) {
+  void makeLine(Offset details) {
     int length = shapes.length - 1;
-    Offset pos = details.globalPosition;
-    shapes[length].mirrorPosition = Offset(pos.dx - 170, pos.dy - 350);
+    Offset pos = details;
+    shapes[length].rB = Offset(pos.dx - 170, pos.dy - 350);
   }
 }
