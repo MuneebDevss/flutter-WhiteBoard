@@ -9,8 +9,7 @@ import 'package:white_board/Feature/MainPage/Presentation/Widgets/my_textfield.d
 import '../../../Core/Enitity/shape.dart';
 
 class MainPageController {
-  List<Shapes> shapes = [
-  ];
+  List<Shapes> shapes = [];
 
   int selectedContainerIndex = -1;
   int selectedShape = -1;
@@ -134,7 +133,7 @@ class MainPageController {
     } else if (selectedContainerIndex == 2) {
       Shapes shape = Line();
 
-      shape.lT = Offset(details.dx - 90, details.dy - 270);
+      shape.lT = Offset(details.dx, details.dy - 100);
       shapes.add(shape);
     } else if (selectedContainerIndex == 4) {
       try {
@@ -215,12 +214,11 @@ class MainPageController {
   void makeCircle(Offset details) {
     int length = shapes.length - 1;
     shapes[length].rB = details;
-    shapes[length].borderRadius = details.dy;
   }
 
   void makeLine(Offset details) {
     int length = shapes.length - 1;
     Offset pos = details;
-    shapes[length].rB = Offset(pos.dx - 170, pos.dy - 350);
+    shapes[length].rB = Offset(pos.dx , pos.dy );
   }
 }

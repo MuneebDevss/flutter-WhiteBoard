@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import "dart:math" as math;
+
 class LinePainter extends CustomPainter {
   final Offset startposition;
   final Offset endPosition;
@@ -9,9 +10,22 @@ class LinePainter extends CustomPainter {
     final paint = Paint()
       ..color = Colors.black
       ..strokeWidth = 2;
-
+    Path path = Path();
+    path.moveTo(startposition.dx, startposition.dy);
     // Draw a line from (0, 0) to (size.width, size.height)
     canvas.drawLine(startposition, endPosition, paint);
+    print("$endPosition line");
+    //For the Brush
+    // for (int i = 1; i < points.length - 1; ++i) {
+    //   final p0 = points[i];
+    //   final p1 = points[i + 1];
+    //   path.quadraticBezierTo(
+    //     p0.dx,
+    //     p0.dy,
+    //     (p0.dx + p1.dx) / 2,
+    //     (p0.dy + p1.dy) / 2,
+    //   );
+    // }
   }
 
   @override
@@ -19,8 +33,6 @@ class LinePainter extends CustomPainter {
     return true;
   }
 }
-
-
 
 enum DrawingMode { pencil, line, arrow, eraser, square, circle, polygon }
 
@@ -249,5 +261,3 @@ class SketchPainter extends CustomPainter {
     return oldDelegate.sketches != sketches;
   }
 }
-
-

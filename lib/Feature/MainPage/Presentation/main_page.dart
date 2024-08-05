@@ -4,6 +4,7 @@ import 'package:white_board/Core/Constants/Color/color_palette.dart';
 import 'package:white_board/Core/CustomClipper/line_clipper.dart';
 import 'package:white_board/Core/DeviceUtils/device_utils.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/circle.dart';
+import 'package:white_board/Core/Enitity/ShapeModels/line.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/rectangle.dart';
 import 'package:white_board/Core/Enitity/shape.dart';
 import 'package:white_board/Feature/MainPage/Controller/main_page_controller.dart';
@@ -254,9 +255,13 @@ class _MainPageState extends State<MainPage> {
             ),
           ),
         );
-      } else
-        {return 
-        Container();}
+      } else if (shape is Line) {
+        return CustomPaint(
+          painter: LinePainter(startposition: shape.lT, endPosition: shape.rB),
+        );
+      } else {
+        return Container();
+      }
     });
   }
 }
