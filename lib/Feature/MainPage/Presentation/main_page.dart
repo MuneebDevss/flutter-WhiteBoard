@@ -9,7 +9,6 @@ import 'package:white_board/Core/Enitity/ShapeModels/rectangle.dart';
 import 'package:white_board/Core/Enitity/shape.dart';
 import 'package:white_board/Feature/MainPage/Controller/main_page_controller.dart';
 import 'package:white_board/Feature/MainPage/Presentation/Widgets/selected_shape.dart';
-import 'dart:io' show platform;
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -101,133 +100,7 @@ class _MainPageState extends State<MainPage> {
                 ),
               ),
             ),
-          )
-          // if (isWeb)
-
-          //   Listener(
-          //     onPointerDown: (details) {
-          //       controller.storePointerDownPosition(details, context);
-          //       setState(() {});
-          //     },
-          //     child: Container(
-          //       width: screenWidth,
-          //       height: 320,
-          //        color: Colors.transparent,
-          //       child: Stack(
-          //         children: List.generate(controller.shapes.length, (index) {
-          //           Shapes shape = controller.shapes[index];
-          //           if (shape is Line) {
-          //             return Positioned(
-          //               top: shape.position.dy,
-
-          //               left: shape.position.dx,
-          //               child: GestureDetector(
-          //                 onTap: () {
-          //                   controller.storeTap(index);
-          //                   setState(() {});
-          //                 },
-          //                 child: LineItem(
-          //                   shape: shape,
-          //                   controller: controller,
-          //                   index: index,
-          //                 ),
-          //               ),
-          //             );
-          //           } else {
-          //             return Positioned(
-          //               top: screenHeight > screenWidth
-          //                   ? shape.position.dy
-          //                   : shape.position.dx - 100,
-          //               left: screenHeight > screenWidth
-          //                   ? shape.position.dx
-          //                   : shape.position.dy,
-          //               child: GestureDetector(
-          //                 onTap: () {
-          //                   controller.storeTap(index);
-          //                   setState(() {});
-          //                 },
-          //                 child: Align(
-          //                   alignment: Alignment.centerLeft,
-          //                   child: ShapeItem(
-          //                     shape: shape,
-          //                     controller: controller,
-          //                     index: index,
-          //                   ),
-          //                 ),
-          //               ),
-          //             );
-          //           }
-          //         }),
-          //       ),
-          //     ),
-          //   ),
-          // if (!isWeb)
-          //   Expanded(
-          //     child: GestureDetector(
-          //       onTapDown: (details) {
-          //         controller.storeTapDownPosition(details);
-          //         setState(() {});
-          //       },
-          //       onPanUpdate: (details) {
-          //         controller.storePanUpdatePosition(details);
-          //         setState(() {});
-          //       },
-          //       child: Container(
-          //         width: double.infinity,
-          //         height: double.infinity,
-          //         color: Colors.transparent,
-          //         child: Stack(
-          //           children: List.generate(controller.shapes.length, (index) {
-          //             Shapes shape = controller.shapes[index];
-          //             if (shape is Line) {
-          //               return Positioned(
-          //                 top: screenHeight > screenWidth
-          //                     ? shape.position.dy
-          //                     : shape.position.dx - 100,
-          //                 left: screenHeight > screenWidth
-          //                     ? shape.position.dx
-          //                     : shape.position.dy,
-          //                 child: GestureDetector(
-          //                   onTap: () {
-          //                     controller.storeTap(index);
-          //                     setState(() {});
-          //                   },
-          //                   child: LineItem(
-          //                     shape: shape,
-          //                     controller: controller,
-          //                     index: index,
-          //                   ),
-          //                 ),
-          //               );
-          //             } else {
-          //               return Positioned(
-          //                 top: screenHeight > screenWidth
-          //                     ? shape.position.dy
-          //                     : shape.position.dx - 100,
-          //                 left: screenHeight > screenWidth
-          //                     ? shape.position.dx
-          //                     : shape.position.dy,
-          //                 child: GestureDetector(
-          //                   onTap: () {
-          //                     controller.storeTap(index);
-          //                     setState(() {});
-          //                   },
-          //                   child: Align(
-          //                     alignment: Alignment.centerLeft,
-          //                     child: ShapeItem(
-          //                       shape: shape,
-          //                       controller: controller,
-          //                       index: index,
-          //                     ),
-          //                   ),
-          //                 ),
-          //               );
-          //             }
-          //           }),
-          //         ),
-          //       ),
-          //     ),
-          //   ),
+          )        
         ],
       ),
     );
@@ -238,20 +111,24 @@ class _MainPageState extends State<MainPage> {
       Shapes shape = controller.shapes[index];
       Offset pos = shape.lT;
       Offset rB = shape.rB;
-      if (shape is Rectangle) {
+      if (shape is Rectangle || shape is Circle) {
         return Positioned.fromRect(
           rect: Rect.fromLTRB(pos.dx, pos.dy, rB.dx, rB.dy),
-          child: Container(
-            color: Colors.amber,
-          ),
-        );
-      } else if (shape is Circle) {
-        return Positioned.fromRect(
-          rect: Rect.fromLTRB(pos.dx, pos.dy, rB.dx, rB.dy),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.amber,
-              borderRadius: BorderRadius.circular(shape.borderRadius ?? 0),
+          child: MouseRegion(
+            
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: ()=>controller.selectedShape=index,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: shape.backgroundColor,
+                  borderRadius: BorderRadius.circular(shape.borderRadius ?? 0),
+                  border: Border.all(
+                    color: controller.selectedShape==index?Colors.blue:shape.backgroundColor?? Colors.grey,
+                  )
+                ),
+                child: shape.child,
+              ),
             ),
           ),
         );
@@ -266,66 +143,3 @@ class _MainPageState extends State<MainPage> {
   }
 }
 
-class ShapeItem extends StatelessWidget {
-  const ShapeItem({
-    super.key,
-    required this.shape,
-    required this.controller,
-    required this.index,
-  });
-
-  final Shapes shape;
-  final int index;
-  final MainPageController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      decoration: BoxDecoration(
-          color: shape.backgroundColor,
-          borderRadius: shape.borderRadius == null
-              ? null
-              : BorderRadius.circular(shape.borderRadius!),
-          border: Border.all(
-              color:
-                  controller.selectedShape == index ? Colors.blue : Colors.grey,
-              width: 2)),
-      duration: const Duration(milliseconds: 100),
-      child: shape.child,
-    );
-  }
-}
-
-class LineItem extends StatelessWidget {
-  const LineItem({
-    super.key,
-    required this.shape,
-    required this.controller,
-    required this.index,
-  });
-
-  final Shapes shape;
-  final int index;
-  final MainPageController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: LinePainter(startposition: shape.lT, endPosition: shape.rB),
-      child: Align(
-        alignment: Alignment.center,
-        child: SizedBox(
-          width: shape.lT.dx > shape.rB.dx
-              ? shape.lT.dx - shape.rB.dx
-              : shape.rB.dx - shape.lT.dx,
-          height: shape.lT.dy > shape.rB.dy
-              ? shape.lT.dy - shape.rB.dy
-              : shape.rB.dy - shape.lT.dy,
-          child: Container(
-            color: Colors.blue.withOpacity(0.3), // Optional: visual indication
-          ),
-        ),
-      ),
-    );
-  }
-}

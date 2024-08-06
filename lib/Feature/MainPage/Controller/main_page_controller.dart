@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/circle.dart';
@@ -9,11 +10,12 @@ import 'package:white_board/Feature/MainPage/Presentation/Widgets/my_textfield.d
 import '../../../Core/Enitity/shape.dart';
 
 class MainPageController {
+  //Properties
   List<Shapes> shapes = [];
-
-  int selectedContainerIndex = -1;
   int selectedShape = -1;
-
+  late Offset clickedPositioned;
+  SystemMouseCursor cursor = SystemMouseCursors.click;
+  int selectedContainerIndex = -1;
   final List<SelectedContainer> selectedContainer = [
     RectangularContainer(
       button: const Icon(Icons.square_outlined),
@@ -25,7 +27,7 @@ class MainPageController {
       button: const Icon(Icons.arrow_forward),
     ),
     SelectedContainer(
-      button: const Icon(Iconsax.link),
+      button: const Icon(Icons.pan_tool_alt_outlined),
     ),
     SelectedContainer(
       button: const Icon(Icons.text_format_outlined),
@@ -41,6 +43,7 @@ class MainPageController {
     ),
   ];
 
+  //Behaviors
   void storeTap(int index) {
     if (selectedContainerIndex == 6) //Eraser is selected
     {
@@ -73,14 +76,12 @@ class MainPageController {
     } else if (selectedContainerIndex == 0) {
       Shapes shape = Rectangle();
 
-      shape.backgroundColor = Colors.black;
       shape.lT = Offset(details.dx, details.dy - 100);
       shape.rB = Offset(details.dx, details.dy - 100);
       shapes.add(shape);
     } else if (selectedContainerIndex == 1) {
       Shapes shape = Circle();
       shape.borderRadius = 50;
-      shape.backgroundColor = Colors.black;
       shape.lT = Offset(details.dx, details.dy - 100);
       shape.rB = Offset(details.dx, details.dy - 100);
 
@@ -90,11 +91,12 @@ class MainPageController {
 
       shape.lT = Offset(details.dx - 90, details.dy - 270);
       shapes.add(shape);
+    } else if (selectedContainerIndex == 3) {
+      clickedPositioned = Offset(details.dx, details.dy-100);
     } else if (selectedContainerIndex == 4) {
       try {
         Shapes shape = Rectangle();
 
-        shape.backgroundColor = Colors.black;
         shape.child = const MyTextfield(
           style: TextStyle(fontSize: 12),
           fontSize: 12,
@@ -118,14 +120,13 @@ class MainPageController {
     } else if (selectedContainerIndex == 0) {
       Shapes shape = Rectangle();
 
-      shape.backgroundColor = Colors.black;
       shape.lT = Offset(details.dx, details.dy - 100);
       shape.rB = Offset(details.dx, details.dy - 100);
       shapes.add(shape);
     } else if (selectedContainerIndex == 1) {
       Shapes shape = Circle();
       shape.borderRadius = 50;
-      shape.backgroundColor = Colors.black;
+
       shape.lT = Offset(details.dx, details.dy - 100);
       shape.rB = Offset(details.dx, details.dy - 100);
 
@@ -135,17 +136,18 @@ class MainPageController {
 
       shape.lT = Offset(details.dx, details.dy - 100);
       shapes.add(shape);
+    } else if (selectedContainerIndex == 3) {
+      clickedPositioned = details;
     } else if (selectedContainerIndex == 4) {
       try {
         Shapes shape = Rectangle();
 
-        shape.backgroundColor = Colors.black;
         shape.child = const MyTextfield(
-          style: TextStyle(fontSize: 12),
+          style: TextStyle(fontSize: 12, color: Colors.black),
           fontSize: 12,
         );
-        shape.lT = Offset(details.dx, details.dy - 200);
-        shape.rB = Offset(details.dx, details.dy - 200);
+        shape.lT = Offset(details.dx, details.dy - 100);
+        shape.rB = Offset(details.dx + 100, details.dy + 100);
       } catch (e) {
         ScaffoldMessenger.of(Get.context!)
             .showSnackBar(SnackBar(content: Text(e.toString())));
@@ -167,6 +169,8 @@ class MainPageController {
       makeCircle(position);
     } else if (selectedContainerIndex == 2) {
       makeLine(position);
+    } else if (selectedContainerIndex == 3) {
+      grab(Offset(position.dx, position.dy+100));
     } else if (selectedContainerIndex == 5) {}
   }
 
@@ -219,6 +223,18 @@ class MainPageController {
   void makeLine(Offset details) {
     int length = shapes.length - 1;
     Offset pos = details;
-    shapes[length].rB = Offset(pos.dx , pos.dy );
+    shapes[length].rB = Offset(pos.dx, pos.dy);
   }
+
+  void grab(Offset position) {
+  if (selectedShape != -1) {
+    Offset lt = shapes[selectedShape].lT;
+    Offset rB = shapes[selectedShape].rB;
+    Offset delta = position - clickedPositioned;
+    shapes[selectedShape].lT = lt + delta;
+    shapes[selectedShape].rB = rB + delta;      
+    clickedPositioned = position; 
+  }
+}
+
 }
