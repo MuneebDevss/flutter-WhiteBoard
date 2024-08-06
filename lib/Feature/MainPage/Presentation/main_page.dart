@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:white_board/Core/Constants/Color/color_palette.dart';
 import 'package:white_board/Core/CustomClipper/line_clipper.dart';
 import 'package:white_board/Core/DeviceUtils/device_utils.dart';
+import 'package:white_board/Core/Enitity/ShapeModels/brush.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/circle.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/line.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/rectangle.dart';
@@ -100,7 +101,7 @@ class _MainPageState extends State<MainPage> {
                 ),
               ),
             ),
-          )        
+          )
         ],
       ),
     );
@@ -115,18 +116,23 @@ class _MainPageState extends State<MainPage> {
         return Positioned.fromRect(
           rect: Rect.fromLTRB(pos.dx, pos.dy, rB.dx, rB.dy),
           child: MouseRegion(
-            
             cursor: SystemMouseCursors.click,
             child: GestureDetector(
-              onTap: ()=>controller.selectedShape=index,
+              onTap: () {
+                controller.manageTap(index);
+
+                setState(() {});
+              },
               child: Container(
                 decoration: BoxDecoration(
-                  color: shape.backgroundColor,
-                  borderRadius: BorderRadius.circular(shape.borderRadius ?? 0),
-                  border: Border.all(
-                    color: controller.selectedShape==index?Colors.blue:shape.backgroundColor?? Colors.grey,
-                  )
-                ),
+                    color: shape.backgroundColor,
+                    borderRadius:
+                        BorderRadius.circular(shape.borderRadius ?? 0),
+                    border: Border.all(
+                      color: controller.selectedShape == index
+                          ? Colors.blue
+                          : shape.backgroundColor ?? Colors.grey,
+                    )),
                 child: shape.child,
               ),
             ),
@@ -134,7 +140,11 @@ class _MainPageState extends State<MainPage> {
         );
       } else if (shape is Line) {
         return CustomPaint(
-          painter: LinePainter(startposition: shape.lT, endPosition: shape.rB),
+          painter: LinePainter(endPosition: rB, startPosition: pos),
+        );
+      } else if (shape is Brush) {
+        return CustomPaint(
+          painter: BrushClipper(points: shape.points),
         );
       } else {
         return Container();
@@ -142,4 +152,3 @@ class _MainPageState extends State<MainPage> {
     });
   }
 }
-

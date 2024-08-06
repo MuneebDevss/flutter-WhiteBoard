@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:white_board/Core/Enitity/ShapeModels/brush.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/circle.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/line.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/rectangle.dart';
-import 'package:white_board/Feature/MainPage/Entities/selection_container.dart';
+import 'package:white_board/Feature/MainPage/Presentation/Widgets/selection_container.dart';
 import 'package:white_board/Feature/MainPage/Presentation/Widgets/my_textfield.dart';
 import '../../../Core/Enitity/shape.dart';
 
@@ -17,7 +18,7 @@ class MainPageController {
   SystemMouseCursor cursor = SystemMouseCursors.click;
   int selectedContainerIndex = -1;
   final List<SelectedContainer> selectedContainer = [
-    RectangularContainer(
+    SelectedContainer(
       button: const Icon(Icons.square_outlined),
     ),
     SelectedContainer(
@@ -44,7 +45,7 @@ class MainPageController {
   ];
 
   //Behaviors
-  void storeTap(int index) {
+  void manageTap(int index) {
     if (selectedContainerIndex == 6) //Eraser is selected
     {
       if (selectedShape == index) {
@@ -67,56 +68,27 @@ class MainPageController {
     }
   }
 
-  void storeTapDownPosition(TapDownDetails offsets, BuildContext context) {
-    final box = context.findRenderObject() as RenderBox;
-    final details = box.globalToLocal(offsets.localPosition);
-    //if not drawing any shape
-    if (selectedContainerIndex == -1 || selectedContainerIndex == 6) {
-      //tapped on a shape
-    } else if (selectedContainerIndex == 0) {
-      Shapes shape = Rectangle();
-
-      shape.lT = Offset(details.dx, details.dy - 100);
-      shape.rB = Offset(details.dx, details.dy - 100);
-      shapes.add(shape);
-    } else if (selectedContainerIndex == 1) {
-      Shapes shape = Circle();
-      shape.borderRadius = 50;
-      shape.lT = Offset(details.dx, details.dy - 100);
-      shape.rB = Offset(details.dx, details.dy - 100);
-
-      shapes.add(shape);
-    } else if (selectedContainerIndex == 2) {
-      Shapes shape = Line();
-
-      shape.lT = Offset(details.dx - 90, details.dy - 270);
-      shapes.add(shape);
-    } else if (selectedContainerIndex == 3) {
-      clickedPositioned = Offset(details.dx, details.dy-100);
-    } else if (selectedContainerIndex == 4) {
-      try {
-        Shapes shape = Rectangle();
-
-        shape.child = const MyTextfield(
-          style: TextStyle(fontSize: 12),
-          fontSize: 12,
-        );
-        shape.lT = Offset(details.dx, details.dy - 200);
-        shape.rB = Offset(details.dx, details.dy - 200);
-      } catch (e) {
-        ScaffoldMessenger.of(Get.context!)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
-      }
-    }
-  }
-
   void storePointerDownPosition(
       PointerDownEvent offsets, BuildContext context) {
     final box = context.findRenderObject() as RenderBox;
     final details = box.globalToLocal(offsets.position);
     //if not drawing any shape
-    if (selectedContainerIndex == -1 || selectedContainerIndex == 6) {
+    if (selectedContainerIndex == -1 || selectedContainerIndex == 3) {
       //tapped on a shape
+      if (selectedContainerIndex == 3) {
+        clickedPositioned = details;
+        for (int x = 0; x < shapes.length; x++) {
+          if (shapes[x] is Line) {
+            Shapes line = shapes[x];
+            if (((((line.lT + line.rB) / 2).dx - 10) <= details.dx &&
+                    (((line.lT + line.rB) / 2).dx + 10) >= details.dx) &&
+                ((((line.lT + line.rB) / 2).dy - 10) <= details.dy - 100 &&
+                    (((line.lT + line.rB) / 2).dy + 10) >= details.dy - 100)) {
+              selectedShape = x;
+            }
+          }
+        }
+      }
     } else if (selectedContainerIndex == 0) {
       Shapes shape = Rectangle();
 
@@ -136,22 +108,19 @@ class MainPageController {
 
       shape.lT = Offset(details.dx, details.dy - 100);
       shapes.add(shape);
-    } else if (selectedContainerIndex == 3) {
-      clickedPositioned = details;
     } else if (selectedContainerIndex == 4) {
-      try {
-        Shapes shape = Rectangle();
+      Shapes shape = Rectangle();
 
-        shape.child = const MyTextfield(
-          style: TextStyle(fontSize: 12, color: Colors.black),
-          fontSize: 12,
-        );
-        shape.lT = Offset(details.dx, details.dy - 100);
-        shape.rB = Offset(details.dx + 100, details.dy + 100);
-      } catch (e) {
-        ScaffoldMessenger.of(Get.context!)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
-      }
+      shape.child = const MyTextfield(
+        style: TextStyle(fontSize: 12, color: Colors.black),
+        fontSize: 12,
+      );
+      shape.lT = Offset(details.dx, details.dy - 100);
+      shape.rB = Offset(details.dx + 100, details.dy);
+      shapes.add(shape);
+    } else if (selectedContainerIndex == 5) {
+      Shapes shape = Brush(points: [Offset(details.dx, details.dy - 100)]);
+      shapes.add(shape);
     }
   }
 
@@ -170,8 +139,12 @@ class MainPageController {
     } else if (selectedContainerIndex == 2) {
       makeLine(position);
     } else if (selectedContainerIndex == 3) {
-      grab(Offset(position.dx, position.dy+100));
-    } else if (selectedContainerIndex == 5) {}
+      grab(Offset(position.dx, position.dy + 100));
+    } else if (selectedContainerIndex == 5) {
+      paint(position);
+    } else if (selectedContainerIndex == 6) {
+      eraseBrush(position);
+    }
   }
 
   void makeRectangle(Offset details) {
@@ -227,14 +200,38 @@ class MainPageController {
   }
 
   void grab(Offset position) {
-  if (selectedShape != -1) {
-    Offset lt = shapes[selectedShape].lT;
-    Offset rB = shapes[selectedShape].rB;
-    Offset delta = position - clickedPositioned;
-    shapes[selectedShape].lT = lt + delta;
-    shapes[selectedShape].rB = rB + delta;      
-    clickedPositioned = position; 
+    if (selectedShape != -1) {
+      Offset lt = shapes[selectedShape].lT;
+      Offset rB = shapes[selectedShape].rB;
+      Offset delta = position - clickedPositioned;
+      shapes[selectedShape].lT = lt + delta;
+      shapes[selectedShape].rB = rB + delta;
+      clickedPositioned = position;
+    }
   }
-}
 
+  void paint(Offset position) {
+    int length = shapes.length - 1;
+    final Shapes shape = shapes[length];
+    if (shape is Brush) {
+      shape.points.add(position);
+    }
+    shapes[length] = shape;
+  }
+
+  void eraseBrush(Offset position) {
+    
+          
+    for (int index = 0; index < shapes.length; index++) {
+      final Shapes shape = shapes[index];
+      if (shape is Brush) {
+        print('${shape.points}\n');
+        print('$position\n');
+        if (shape.points.contains(position)) {
+          int ind = shape.points.indexOf(position);
+          // shapes.removeAt(ind);
+        }
+      }
+    }
+  }
 }
