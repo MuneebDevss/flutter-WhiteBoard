@@ -45,11 +45,14 @@ class MainPageController {
     SelectedContainer(
       button: const Icon(Icons.image),
     ),
+    SelectedContainer(
+      button: const Icon(Icons.delete_forever),
+    ),
   ];
 
   //Behaviors
-  void manageTap(int index) {
-    if (selectedContainerIndex == 6) //Eraser is selected
+  void manageTap(int index, Offset details) {
+    if (selectedContainerIndex == 8) //Eraser is selected
     {
       if (selectedShape == index) {
         shapes.removeAt(selectedShape);
@@ -61,10 +64,13 @@ class MainPageController {
       {
         selectedShape = index;
       }
-    } else if (selectedShape != index) //already not selected
+    } else if (selectedShape != index &&
+        (selectedContainerIndex == -1 ||
+            selectedContainerIndex == 3)) //already not selected
     {
       selectedShape = index;
-    } else {
+    } else if (selectedShape == index &&
+        (selectedContainerIndex == -1 || selectedContainerIndex == 3)) {
       selectedShape = -1;
     }
   }
@@ -73,31 +79,28 @@ class MainPageController {
       SideBarController controller) {
     final box = context.findRenderObject() as RenderBox;
     final details = box.globalToLocal(offsets.position);
-    //if not drawing any shape
-    if (selectedContainerIndex == 6 || selectedContainerIndex == 3) {
+    //if not drawing any shape (deleting or grabing the shape)
+    if (selectedContainerIndex == 8 ||
+        selectedContainerIndex == 3 ||
+        selectedContainerIndex == -1) {
       //tapped on a line
-      if (selectedContainerIndex == 3 || selectedContainerIndex == 6) {
-        // tapp position for the grab
-        clickedPositioned = details;
-        //tap position specially for line
 
-        for (int x = 0; x < shapes.length; x++) {
-          if (shapes[x] is Line) {
-            Shapes line = shapes[x];
-            if (((((line.lT + line.rB) / 2).dx - 10) <= details.dx &&
-                    (((line.lT + line.rB) / 2).dx + 10) >= details.dx) &&
-                ((((line.lT + line.rB) / 2).dy - 10) <= details.dy - 100 &&
-                    (((line.lT + line.rB) / 2).dy + 10) >= details.dy - 100)) {
-              if (selectedContainerIndex == 6 && selectedShape == x) {
-                shapes.removeAt(selectedShape);
-              } else if (selectedShape == x) {
-                selectedShape = -1;
-              } else {
-                selectedShape = x;
-              }
+      // tapp position for the grab
+      clickedPositioned = details;
+      for (int x = 0; x < shapes.length; x++) {
+        if (shapes[x] is Line) {
+          Shapes line = shapes[x];
+          double dx = ((line.lT + line.rB) / 2).dx;
+          double dy = ((line.lT + line.rB) / 2).dy;
+          if ((dx - 10 <= details.dx && dx + 10 >= details.dx) &&
+              (dy - 10 <= details.dy - 100 && dy + 10 >= details.dy - 100)) {
+            if (selectedContainerIndex == 8 && selectedShape == x) {
+              shapes.removeAt(selectedShape);
+            } else if (selectedShape == x) {
+              selectedShape = -1;
+            } else if (selectedShape != x) {
+              selectedShape = x;
             }
-            //erase the line
-            
           }
         }
       }

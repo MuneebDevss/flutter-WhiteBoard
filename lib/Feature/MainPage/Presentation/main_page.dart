@@ -164,8 +164,8 @@ class _MainPageState extends State<MainPage> {
           child: MouseRegion(
             cursor: SystemMouseCursors.click,
             child: GestureDetector(
-              onTap: () {
-                controller.manageTap(index);
+              onTapDown: (TapDownDetails details) {
+                controller.manageTap(index,details.localPosition);
                 setState(() {});
               },
               child: Container(
@@ -187,7 +187,7 @@ class _MainPageState extends State<MainPage> {
       } else if (shape is Line) {
         return CustomPaint(
           size: const Size(20,20),
-          painter: LinePainter(endPosition: rB, startPosition: pos, stroke: shape.stroke, strokeWidth: shape.strokeWidth, isGrabAble: controller.selectedContainerIndex==3||controller.selectedContainerIndex==6,opacity: shape.opacity),
+          painter: LinePainter(endPosition: rB, startPosition: pos, stroke: shape.stroke, strokeWidth: shape.strokeWidth, isGrabAble: controller.selectedContainerIndex==3||controller.selectedContainerIndex==8,opacity: shape.opacity),
         );
       } else if (shape is Brush) {
         return CustomPaint(
