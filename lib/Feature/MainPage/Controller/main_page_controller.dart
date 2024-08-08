@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
 import 'package:iconsax/iconsax.dart';
+import 'package:white_board/Core/Constants/enum.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/brush.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/circle.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/line.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/rectangle.dart';
+import 'package:white_board/Feature/MainPage/Controller/side_bar_controller.dart';
 import 'package:white_board/Feature/MainPage/Presentation/Widgets/selection_container.dart';
 import 'package:white_board/Feature/MainPage/Presentation/Widgets/my_textfield.dart';
 import '../../../Core/Enitity/shape.dart';
 
 class MainPageController {
   //Properties
+  bool first = false;
   List<Shapes> shapes = [];
   int selectedShape = -1;
   late Offset clickedPositioned;
+
   SystemMouseCursor cursor = SystemMouseCursors.click;
   int selectedContainerIndex = -1;
   final List<SelectedContainer> selectedContainer = [
@@ -52,31 +55,32 @@ class MainPageController {
         shapes.removeAt(selectedShape);
         if (shapes.isEmpty) {
           shapes = [];
-          selectedShape = -1;
         }
+        selectedShape = -1;
       } else if (selectedShape != index) //already not selected
       {
         selectedShape = index;
-      } else {
-        index = -1;
       }
     } else if (selectedShape != index) //already not selected
     {
       selectedShape = index;
     } else {
-      index = -1;
+      selectedShape = -1;
     }
   }
 
-  void storePointerDownPosition(
-      PointerDownEvent offsets, BuildContext context) {
+  void storePointerDownPosition(PointerDownEvent offsets, BuildContext context,
+      SideBarController controller) {
     final box = context.findRenderObject() as RenderBox;
     final details = box.globalToLocal(offsets.position);
     //if not drawing any shape
-    if (selectedContainerIndex == -1 || selectedContainerIndex == 3) {
-      //tapped on a shape
-      if (selectedContainerIndex == 3) {
+    if (selectedContainerIndex == 6 || selectedContainerIndex == 3) {
+      //tapped on a line
+      if (selectedContainerIndex == 3 || selectedContainerIndex == 6) {
+        // tapp position for the grab
         clickedPositioned = details;
+        //tap position specially for line
+
         for (int x = 0; x < shapes.length; x++) {
           if (shapes[x] is Line) {
             Shapes line = shapes[x];
@@ -84,42 +88,67 @@ class MainPageController {
                     (((line.lT + line.rB) / 2).dx + 10) >= details.dx) &&
                 ((((line.lT + line.rB) / 2).dy - 10) <= details.dy - 100 &&
                     (((line.lT + line.rB) / 2).dy + 10) >= details.dy - 100)) {
-              selectedShape = x;
+              if (selectedContainerIndex == 6 && selectedShape == x) {
+                shapes.removeAt(selectedShape);
+              } else if (selectedShape == x) {
+                selectedShape = -1;
+              } else {
+                selectedShape = x;
+              }
             }
+            //erase the line
+            
           }
         }
       }
     } else if (selectedContainerIndex == 0) {
-      Shapes shape = Rectangle();
-
-      shape.lT = Offset(details.dx, details.dy - 100);
-      shape.rB = Offset(details.dx, details.dy - 100);
+      Shapes shape = Rectangle(
+        lT: Offset(details.dx, details.dy - 100),
+        rB: Offset(details.dx, details.dy - 100),
+        stroke: controller.strokeColor,
+        strokeStyle: controller.strokeStyle,
+        strokeWidth: controller.strokeWidth,
+        backgroundColor: controller.backgroundColor,
+      );
       shapes.add(shape);
     } else if (selectedContainerIndex == 1) {
-      Shapes shape = Circle();
-      shape.borderRadius = 50;
-
-      shape.lT = Offset(details.dx, details.dy - 100);
-      shape.rB = Offset(details.dx, details.dy - 100);
-
+      Shapes shape = Circle(
+        lT: Offset(details.dx, details.dy - 100),
+        rB: Offset(details.dx, details.dy - 100),
+        stroke: controller.strokeColor,
+        strokeStyle: controller.strokeStyle,
+        strokeWidth: controller.strokeWidth,
+        backgroundColor: controller.backgroundColor,
+      );
       shapes.add(shape);
     } else if (selectedContainerIndex == 2) {
-      Shapes shape = Line();
-
-      shape.lT = Offset(details.dx, details.dy - 100);
+      Shapes shape = Line(
+        lT: Offset(details.dx, details.dy - 100),
+        rB: Offset(details.dx, details.dy - 100),
+        stroke: controller.strokeColor,
+        strokeStyle: controller.strokeStyle,
+        strokeWidth: controller.strokeWidth,
+      );
       shapes.add(shape);
     } else if (selectedContainerIndex == 4) {
-      Shapes shape = Rectangle();
+      Shapes shape = Rectangle(
+          lT: Offset(details.dx, details.dy - 100),
+          rB: Offset(details.dx + 50, details.dy - 50),
+          stroke: Colors.transparent,
+          strokeStyle: StrokeStyle.dashedBorder,
+          child: const MyTextfield(
+            style: TextStyle(fontSize: 12, color: Colors.black),
+            fontSize: 12,
+          ));
 
-      shape.child = const MyTextfield(
-        style: TextStyle(fontSize: 12, color: Colors.black),
-        fontSize: 12,
-      );
-      shape.lT = Offset(details.dx, details.dy - 100);
-      shape.rB = Offset(details.dx + 100, details.dy);
       shapes.add(shape);
     } else if (selectedContainerIndex == 5) {
-      Shapes shape = Brush(points: [Offset(details.dx, details.dy - 100)]);
+      Shapes shape = Brush(
+        points: [Offset(details.dx, details.dy - 100)],
+        stroke: controller.strokeColor,
+        strokeStyle: controller.strokeStyle,
+        strokeWidth: controller.strokeWidth,
+      );
       shapes.add(shape);
     }
   }
@@ -150,20 +179,6 @@ class MainPageController {
   void makeRectangle(Offset details) {
     int length = shapes.length - 1;
     shapes[length].rB = details;
-    // if (dx > shapes[length].position.dx) {
-    //   shapes[length].right = dx - shapes[length].position.dx;
-    // } else {
-    //   shapes[length].right = -1 * (dx - shapes[length].position.dx);
-    // }
-    // if (dy > shapes[length].position.dy + shapes[length].bottom) {
-    //   shapes[length].bottom = (dy / 2 - shapes[length].position.dy) > 0
-    //       ? dy / 2 - shapes[length].position.dy
-    //       : dy - shapes[length].position.dy;
-    // } else {
-    //   shapes[length].bottom = -1 * (dy / 2 - shapes[length].position.dy) > 0
-    //       ? -1 * (dy / 2 - shapes[length].position.dy)
-    //       : -1 * (dy - shapes[length].position.dy);
-    // }
   }
 
   void handleShapeSizing(Shapes shape, Offset position) {
@@ -196,6 +211,7 @@ class MainPageController {
   void makeLine(Offset details) {
     int length = shapes.length - 1;
     Offset pos = details;
+    //end point of the length
     shapes[length].rB = Offset(pos.dx, pos.dy);
   }
 
@@ -203,6 +219,7 @@ class MainPageController {
     if (selectedShape != -1) {
       Offset lt = shapes[selectedShape].lT;
       Offset rB = shapes[selectedShape].rB;
+      //new position of cursor relative to the previos/Clicked position
       Offset delta = position - clickedPositioned;
       shapes[selectedShape].lT = lt + delta;
       shapes[selectedShape].rB = rB + delta;
@@ -220,16 +237,26 @@ class MainPageController {
   }
 
   void eraseBrush(Offset position) {
-    
-          
     for (int index = 0; index < shapes.length; index++) {
       final Shapes shape = shapes[index];
+      List<Offset> temp = [];
       if (shape is Brush) {
-        print('${shape.points}\n');
-        print('$position\n');
-        if (shape.points.contains(position)) {
-          int ind = shape.points.indexOf(position);
-          // shapes.removeAt(ind);
+        //Look for all the points in the brush area
+        for (Offset point in shape.points) {
+          if (((point.dx - 10) <= position.dx &&
+                  (point.dx + 10) >= position.dx) &&
+              ((point.dy - 10) <= position.dy &&
+                  (point.dy + 10) >= position.dy)) {
+            temp.add(point);
+          }
+          // remove all those points
+          for (Offset point in temp) {
+            shape.points.remove(point);
+          }
+        }
+        //Remove the brush sketch if it has not point
+        if (shape.points.isEmpty) {
+          shapes.removeAt(index);
         }
       }
     }

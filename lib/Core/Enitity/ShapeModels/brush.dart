@@ -6,5 +6,5 @@ class Brush extends Shapes{
   
   
 
-  Brush({required this.points,super.stroke=4});
+  Brush({required this.points,super.strokeWidth=4,super.stroke,super.opacity,super.strokeStyle});
 }
