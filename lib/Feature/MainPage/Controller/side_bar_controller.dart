@@ -18,9 +18,15 @@ class SideBarController {
   Color backgroundColor;
   double strokeWidth;
   StrokeStyle strokeStyle;
+  FontStyle fontStyle;
+  FontSize fontSize;
+  TextAlignment alignment;
   double opacity;
   SideBarController({
-    this.backgroundColor=Colors.transparent,
+    this.fontSize=FontSize.m,
+    this.fontStyle=FontStyle.commicShans,
+    this.alignment=TextAlignment.center,
+    this.backgroundColor = Colors.transparent,
     this.strokeColor = Colors.black,
     this.strokeWidth = 4.0,
     this.strokeStyle = StrokeStyle.solid,

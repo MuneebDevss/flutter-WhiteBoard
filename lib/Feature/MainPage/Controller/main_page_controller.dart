@@ -1,11 +1,17 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:white_board/Core/Constants/enum.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/brush.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/circle.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/line.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/rectangle.dart';
+import 'package:white_board/Core/Enitity/ShapeModels/text_field_rect.dart';
+import 'package:white_board/Core/HelpingFunctions/image_picker.dart';
 import 'package:white_board/Feature/MainPage/Controller/side_bar_controller.dart';
 import 'package:white_board/Feature/MainPage/Presentation/Widgets/selection_container.dart';
 import 'package:white_board/Feature/MainPage/Presentation/Widgets/my_textfield.dart';
@@ -17,7 +23,7 @@ class MainPageController {
   List<Shapes> shapes = [];
   int selectedShape = -1;
   late Offset clickedPositioned;
-
+  Widget? image;
   SystemMouseCursor cursor = SystemMouseCursors.click;
   int selectedContainerIndex = -1;
   final List<SelectedContainer> selectedContainer = [
@@ -51,6 +57,7 @@ class MainPageController {
   ];
 
   //Behaviors
+
   void manageTap(int index, Offset details) {
     if (selectedContainerIndex == 8) //Eraser is selected
     {
@@ -134,14 +141,15 @@ class MainPageController {
       );
       shapes.add(shape);
     } else if (selectedContainerIndex == 4) {
-      Shapes shape = Rectangle(
+      Shapes shape = TextFieldRect(
           lT: Offset(details.dx, details.dy - 100),
           rB: Offset(details.dx + 50, details.dy - 50),
           stroke: Colors.transparent,
           strokeStyle: StrokeStyle.dashedBorder,
-          child: const MyTextfield(
-            style: TextStyle(fontSize: 12, color: Colors.black),
+          child: MyTextfield(
+            style: const TextStyle(fontSize: 12, color: Colors.black),
             fontSize: 12,
+            node: FocusNode(),
           ));
 
       shapes.add(shape);
@@ -153,6 +161,28 @@ class MainPageController {
         strokeWidth: controller.strokeWidth,
       );
       shapes.add(shape);
+    } else if (selectedContainerIndex == 7) {
+      if (image != null) {
+        Shapes shape = Rectangle(
+            lT: Offset(details.dx, details.dy - 100),
+            rB: Offset(details.dx, details.dy - 100),
+            stroke: controller.strokeColor,
+            strokeStyle: controller.strokeStyle,
+            strokeWidth: controller.strokeWidth,
+            backgroundColor: controller.backgroundColor,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: image,
+            ));
+        shapes.add(shape);
+      }
+    }
+
+    //New Shape gets Selected By default
+    if (selectedContainerIndex != 8 &&
+        selectedContainerIndex != 3 &&
+        selectedContainerIndex != -1) {
+      selectedShape = shapes.length - 1;
     }
   }
 
@@ -164,7 +194,7 @@ class MainPageController {
       handleShapeSizing(shape, position);
     }
     // handling shape making
-    else if (selectedContainerIndex == 0) {
+    else if (selectedContainerIndex == 0 || selectedContainerIndex == 7) {
       makeRectangle(position);
     } else if (selectedContainerIndex == 1) {
       makeCircle(position);
@@ -261,6 +291,20 @@ class MainPageController {
         if (shape.points.isEmpty) {
           shapes.removeAt(index);
         }
+      }
+    }
+  }
+
+  Future<void> pickTheImage(bool isWeb) async {
+    if (isWeb) {
+      String? pickedImage = await pickWebImage();
+      if (pickedImage != null) {
+        image = Image.network(pickedImage,fit: BoxFit.cover,);
+      }
+    } else {
+      File? pickedImage = await pickImage();
+      if (pickedImage != null) {
+        image = Image.file(pickedImage,fit: BoxFit.cover);
       }
     }
   }

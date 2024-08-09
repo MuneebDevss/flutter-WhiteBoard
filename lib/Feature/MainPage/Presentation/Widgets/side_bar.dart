@@ -4,15 +4,17 @@ import 'package:white_board/Core/Constants/Size/sizes.dart';
 import 'package:white_board/Core/Constants/enum.dart';
 import 'package:white_board/Feature/MainPage/Controller/side_bar_controller.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
-class MySideBar extends StatefulWidget {
-  const MySideBar({super.key, required this.controller, required this.screenWidth});
+
+class ShapesSideBar extends StatefulWidget {
+  const ShapesSideBar(
+      {super.key, required this.controller, required this.screenWidth});
   final SideBarController controller;
   final double screenWidth;
   @override
-  State<MySideBar> createState() => _MySideBarState();
+  State<ShapesSideBar> createState() => _ShapesSideBarState();
 }
 
-class _MySideBarState extends State<MySideBar> {
+class _ShapesSideBarState extends State<ShapesSideBar> {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -120,6 +122,7 @@ class _MySideBarState extends State<MySideBar> {
       ),
     );
   }
+
   backGroundColorPicker(BuildContext context) {
     return Wrap(
       direction: Axis.horizontal,
@@ -150,10 +153,9 @@ class _MySideBarState extends State<MySideBar> {
           return InkWell(
               splashColor: widget.controller.backgroundColor,
               onTap: () async {
-                widget.controller.backgroundColor =
-                    await showColorPickerDialog(
-                        context, widget.controller.backgroundColor,
-                        showColorCode: true);
+                widget.controller.backgroundColor = await showColorPickerDialog(
+                    context, widget.controller.backgroundColor,
+                    showColorCode: true);
                 setState(() {});
               },
               child: Container(
@@ -173,6 +175,7 @@ class _MySideBarState extends State<MySideBar> {
       }),
     );
   }
+
   Wrap strokeColorPicker(BuildContext context) {
     return Wrap(
       direction: Axis.horizontal,
@@ -216,6 +219,7 @@ class _MySideBarState extends State<MySideBar> {
     );
   }
 }
+
 class MyStrokeStyle extends StatelessWidget {
   const MyStrokeStyle(
       {super.key, required this.iconData, required this.isSelected});

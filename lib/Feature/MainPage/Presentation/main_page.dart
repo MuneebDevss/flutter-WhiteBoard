@@ -8,11 +8,14 @@ import 'package:white_board/Core/Enitity/ShapeModels/brush.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/circle.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/line.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/rectangle.dart';
+import 'package:white_board/Core/Enitity/ShapeModels/text_field_rect.dart';
 import 'package:white_board/Core/Enitity/shape.dart';
+import 'package:white_board/Core/HelpingFunctions/image_picker.dart';
 import 'package:white_board/Feature/MainPage/Controller/main_page_controller.dart';
 import 'package:white_board/Feature/MainPage/Controller/side_bar_controller.dart';
 import 'package:white_board/Feature/MainPage/Presentation/Widgets/selected_shape.dart';
 import 'package:white_board/Feature/MainPage/Presentation/Widgets/side_bar.dart';
+import 'package:white_board/Feature/MainPage/Presentation/Widgets/textfield_side_bar.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -71,7 +74,10 @@ class _MainPageState extends State<MainPage> {
               children: List.generate(
                 controller.selectedContainer.length,
                 (index) => GestureDetector(
-                  onTap: () {
+                  onTap: () async {
+                    if (index == 7) {
+                      controller.pickTheImage(isWeb);
+                    }
                     setState(() {
                       controller.selectedContainerIndex == index
                           ? controller.selectedContainerIndex = -1
@@ -131,7 +137,7 @@ class _MainPageState extends State<MainPage> {
                       child: Container(
                         color: Colors.transparent,
                         width: screenWidth,
-                        height: screenHeight-Sizes.appBarHeight,
+                        height: screenHeight - Sizes.appBarHeight,
                         child: Stack(
                           children: shapeFactory('wor'),
                         ),
@@ -140,10 +146,26 @@ class _MainPageState extends State<MainPage> {
                     Positioned(
                         left: 10,
                         top: 10,
-                        child: MySideBar(
-                          controller: _sideBarController,
-                          screenWidth: screenWidth,
-                        ))
+                        child: controller.selectedContainerIndex != 4
+                            ? controller.selectedShape == -1
+                                ? ShapesSideBar(
+                                    controller: _sideBarController,
+                                    screenWidth: screenWidth,
+                                  )
+                                : controller.shapes[controller.selectedShape]
+                                        is TextFieldRect
+                                    ? TextFieldSideBar(
+                                        controller: _sideBarController,
+                                        screenWidth: screenWidth,
+                                      )
+                                    : ShapesSideBar(
+                                        controller: _sideBarController,
+                                        screenWidth: screenWidth,
+                                      )
+                            : TextFieldSideBar(
+                                controller: _sideBarController,
+                                screenWidth: screenWidth,
+                              ))
                   ],
                 ),
               ),
@@ -158,14 +180,14 @@ class _MainPageState extends State<MainPage> {
       Shapes shape = controller.shapes[index];
       Offset pos = shape.lT;
       Offset rB = shape.rB;
-      if (shape is Rectangle || shape is Circle) {
+      if (shape is Rectangle || shape is Circle || shape is TextFieldRect) {
         return Positioned.fromRect(
           rect: Rect.fromPoints(pos, rB),
           child: MouseRegion(
             cursor: SystemMouseCursors.click,
             child: GestureDetector(
               onTapDown: (TapDownDetails details) {
-                controller.manageTap(index,details.localPosition);
+                controller.manageTap(index, details.localPosition);
                 setState(() {});
               },
               child: Container(
@@ -186,12 +208,23 @@ class _MainPageState extends State<MainPage> {
         );
       } else if (shape is Line) {
         return CustomPaint(
-          size: const Size(20,20),
-          painter: LinePainter(endPosition: rB, startPosition: pos, stroke: shape.stroke, strokeWidth: shape.strokeWidth, isGrabAble: controller.selectedContainerIndex==3||controller.selectedContainerIndex==8,opacity: shape.opacity),
+          size: const Size(20, 20),
+          painter: LinePainter(
+              endPosition: rB,
+              startPosition: pos,
+              stroke: shape.stroke,
+              strokeWidth: shape.strokeWidth,
+              isGrabAble: controller.selectedContainerIndex == 3 ||
+                  controller.selectedContainerIndex == 8,
+              opacity: shape.opacity),
         );
       } else if (shape is Brush) {
         return CustomPaint(
-          painter: BrushClipper(points: shape.points, stroke: shape.stroke, strokeWidth: shape.strokeWidth,opacity: shape.opacity),
+          painter: BrushClipper(
+              points: shape.points,
+              stroke: shape.stroke,
+              strokeWidth: shape.strokeWidth,
+              opacity: shape.opacity),
         );
       } else {
         return Container();
