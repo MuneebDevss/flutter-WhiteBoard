@@ -42,6 +42,7 @@ dependencies:
   iconsax: ^0.0.8
   flex_color_picker: ^3.5.1
   universal_html: ^2.2.4
+  zoom_widget: ^2.0.1
 
 dev_dependencies:
   flutter_test:

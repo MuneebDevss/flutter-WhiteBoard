@@ -1,7 +1,9 @@
+import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:white_board/Core/Constants/Color/color_palette.dart';
 import 'package:white_board/Core/Constants/Size/sizes.dart';
+import 'package:white_board/Core/Constants/enum.dart';
 import 'package:white_board/Core/CustomClipper/line_clipper.dart';
 import 'package:white_board/Core/DeviceUtils/device_utils.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/brush.dart';
@@ -9,8 +11,8 @@ import 'package:white_board/Core/Enitity/ShapeModels/circle.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/line.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/rectangle.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/text_field_rect.dart';
+import 'package:white_board/Core/Enitity/my_stack.dart';
 import 'package:white_board/Core/Enitity/shape.dart';
-import 'package:white_board/Core/HelpingFunctions/image_picker.dart';
 import 'package:white_board/Feature/MainPage/Controller/main_page_controller.dart';
 import 'package:white_board/Feature/MainPage/Controller/side_bar_controller.dart';
 import 'package:white_board/Feature/MainPage/Presentation/Widgets/selected_shape.dart';
@@ -21,14 +23,15 @@ class MainPage extends StatefulWidget {
   const MainPage({super.key});
 
   @override
-  State<MainPage> createState() => _MainPageState();
+  State<MainPage> createState() => MainPageState();
 }
 
-class _MainPageState extends State<MainPage> {
+class MainPageState extends State<MainPage> {
   final bool isWeb = kIsWeb;
 
   late MainPageController controller;
   late SideBarController _sideBarController;
+  Shapes? selectedShape;
   @override
   void dispose() {
     super.dispose();
@@ -38,6 +41,7 @@ class _MainPageState extends State<MainPage> {
   void initState() {
     _sideBarController = SideBarController();
     controller = MainPageController();
+
     super.initState();
   }
 
@@ -45,167 +49,513 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     double screenWidth = TDeviceUtils.getScreenWidth(context);
     double screenHeight = TDeviceUtils.getScreenHeight(context);
-
+    if (controller.selectedShape == -1) {
+      selectedShape = null;
+    } else {
+      selectedShape = controller.shapes[controller.selectedShape];
+    }
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(),
       drawer: const Drawer(),
-      body: Column(
-        children: [
-          const SizedBox(
+      body: SizedBox(
             width: double.maxFinite,
-          ),
-          Container(
-            alignment: Alignment.center,
-            width: screenWidth - (screenWidth / 2),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: const [
-                BoxShadow(
-                  blurRadius: 5,
-                  color: TColors.grey,
-                  blurStyle: BlurStyle.outer,
-                  offset: Offset(0, 1),
-                )
-              ],
-            ),
-            child: Wrap(
-              spacing: 12,
-              children: List.generate(
-                controller.selectedContainer.length,
-                (index) => GestureDetector(
-                  onTap: () async {
-                    if (index == 7) {
-                      controller.pickTheImage(isWeb);
-                    }
-                    setState(() {
-                      controller.selectedContainerIndex == index
-                          ? controller.selectedContainerIndex = -1
-                          : controller.selectedContainerIndex = index;
-                    });
-                  },
-                  child: SelectShape(
-                    screenHeight: screenHeight,
-                    button: controller.selectedContainer[index].button,
-                    isSelected: controller.selectedContainerIndex == index,
+            height: double.infinity,
+            child: Column(
+              children: [
+                Container(
+                  alignment: Alignment.center,
+                  width: screenWidth - (screenWidth / 2),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: const [
+                      BoxShadow(
+                        blurRadius: 5,
+                        color: TColors.grey,
+                        blurStyle: BlurStyle.outer,
+                      )
+                    ],
                   ),
-                ),
-              ),
-            ),
-          ),
-          if (controller.selectedShape != -1 &&
-              controller.selectedContainerIndex != -1)
-            Expanded(
-              child: Listener(
-                onPointerDown: (event) {
-                  controller.storePointerDownPosition(
-                      event, context, _sideBarController);
-                  setState(() {});
-                },
-                onPointerMove: (event) {
-                  controller.storePointerUpdatePosition(event);
-                  setState(() {});
-                },
-                child: Container(
-                  color: Colors.transparent,
-                  width: screenWidth,
-                  height: double.infinity,
-                  child: Stack(
-                    children: shapeFactory('don'),
-                  ),
-                ),
-              ),
-            )
-          else
-            Expanded(
-              child: Container(
-                color: Colors.transparent,
-                width: screenWidth,
-                height: double.infinity,
-                child: Stack(
-                  children: [
-                    Listener(
-                      onPointerDown: (event) {
-                        controller.storePointerDownPosition(
-                            event, context, _sideBarController);
-                        setState(() {});
-                      },
-                      onPointerMove: (event) {
-                        controller.storePointerUpdatePosition(event);
-                        setState(() {});
-                      },
-                      child: Container(
-                        color: Colors.transparent,
-                        width: screenWidth,
-                        height: screenHeight - Sizes.appBarHeight,
-                        child: Stack(
-                          children: shapeFactory('wor'),
+                  child: Wrap(
+                    spacing: 12,
+                    children: List.generate(
+                      controller.selectedContainer.length,
+                      (index) => GestureDetector(
+                        onTap: () async {
+                          if (index == 7) {
+                            controller.pickTheImage(isWeb);
+                          }
+                          setState(() {
+                            controller.selectedContainerIndex == index
+                                ? controller.selectedContainerIndex = -1
+                                : controller.selectedContainerIndex = index;
+                          });
+                        },
+                        child: SelectShape(
+                          screenHeight: screenHeight,
+                          button: controller.selectedContainer[index].button,
+                          isSelected:
+                              controller.selectedContainerIndex == index,
                         ),
                       ),
                     ),
-                    Positioned(
-                        left: 10,
-                        top: 10,
-                        child: controller.selectedContainerIndex != 4
-                            ? controller.selectedShape == -1
-                                ? ShapesSideBar(
-                                    controller: _sideBarController,
-                                    screenWidth: screenWidth,
-                                  )
-                                : controller.shapes[controller.selectedShape]
-                                        is TextFieldRect
-                                    ? TextFieldSideBar(
-                                        controller: _sideBarController,
-                                        screenWidth: screenWidth,
-                                      )
-                                    : ShapesSideBar(
-                                        controller: _sideBarController,
-                                        screenWidth: screenWidth,
-                                      )
-                            : TextFieldSideBar(
-                                controller: _sideBarController,
-                                screenWidth: screenWidth,
-                              ))
-                  ],
+                  ),
                 ),
-              ),
-            )
+                Expanded(
+                  child: Container(
+                    color: Colors.transparent,
+                    width: screenWidth,
+                    height: screenHeight - Sizes.appBarHeight - 50,
+                    child: Stack(
+                      children: [
+                        GestureDetector(
+                          onPanStart: (event) {
+                            controller.storePointerDownPosition(
+                                event, context, _sideBarController);
+                            setState(() {});
+                          },
+                          onPanUpdate: (event) {
+                            controller.storePointerUpdatePosition(event);
+                            setState(() {});
+                          },
+                          child: Container(
+                            color: Colors.transparent,
+                            width: screenWidth,
+                            height: screenHeight - Sizes.appBarHeight,
+                            child: Stack(
+                              children: shapeFactory(),
+                            ),
+                          ),
+                        ),
+                        if (controller.selectedContainerIndex != 3 ||
+                            controller.selectedContainerIndex !=
+                                8) //do not show while grabing or deleting
+                          Positioned(
+                              left: 10,
+                              top: 10,
+                              child: controller.selectedContainerIndex != 4
+                                  ? controller.selectedShape == -1
+                                      ? shapesSideBar(screenWidth)
+                                      : controller.shapes[controller
+                                              .selectedShape] is TextFieldRect
+                                          ? TextFieldSideBar(
+                                              controller: _sideBarController,
+                                              screenWidth: screenWidth,
+                                            )
+                                          : shapesSideBar(screenWidth)
+                                  : TextFieldSideBar(
+                                      controller: _sideBarController,
+                                      screenWidth: screenWidth,
+                                    )),
+                        //zoom
+                        zoom(screenWidth, screenHeight),
+                        //Undo Redo
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+    );
+  }
+
+  Container shapesSideBar(double screenWidth) {
+    return Container(
+      padding: const EdgeInsets.all(Sizes.defaultSpace),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: const [
+          BoxShadow(
+            blurRadius: 5,
+            color: TColors.grey,
+            blurStyle: BlurStyle.outer,
+            offset: Offset(0, 1),
+          )
         ],
+      ),
+      width: screenWidth / 5,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Stroke', style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(
+              height: Sizes.sm,
+            ),
+            strokeColorPicker(context),
+            const SizedBox(
+              height: Sizes.md,
+            ),
+            Text('Background Color',
+                style: Theme.of(context).textTheme.bodySmall),
+            const SizedBox(
+              height: Sizes.sm,
+            ),
+            backGroundColorPicker(context),
+            const SizedBox(
+              height: Sizes.md,
+            ),
+            Text('Opacity', style: Theme.of(context).textTheme.bodySmall),
+            SizedBox(
+              width: double.maxFinite,
+              child: Slider(
+                  label: '${_sideBarController.opacity}',
+                  mouseCursor: SystemMouseCursors.grab,
+                  activeColor: Colors.blue,
+                  value: controller.selectedShape == -1
+                      ? _sideBarController.opacity
+                      : selectedShape!.opacity,
+                  onChanged: (val) {
+                    if (controller.selectedShape != -1) {
+                      controller.shapes[controller.selectedShape]
+                          .opacity = val;
+                      
+                    } else {
+                    _sideBarController.opacity = val;
+                    }
+                    setState(() {});
+                  }),
+            ),
+            const SizedBox(
+              height: Sizes.sm,
+            ),
+            Text('Stroke width', style: Theme.of(context).textTheme.bodySmall),
+            Slider(
+              min: 1,
+              max: 20,
+                label: '${_sideBarController.opacity}',
+                mouseCursor: SystemMouseCursors.grab,
+                activeColor: Colors.blue,
+                value: controller.selectedShape == -1
+                    ? SideBarController().strokeWidth
+                    : selectedShape!.strokeWidth,
+                onChanged: (val) {
+                  if (controller.selectedShape != -1) {
+                    controller.shapes[controller.selectedShape].strokeWidth =
+                        val;
+                  } else {
+                    _sideBarController.strokeWidth = val;
+                    
+                  }
+                  setState(() {});
+                }),
+            const SizedBox(
+              height: Sizes.sm,
+            ),
+            Text(
+              'Stroke Style',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(
+              height: Sizes.sm,
+            ),
+            Wrap(
+              spacing: Sizes.sm,
+              children: [
+                GestureDetector(
+                    onTap: () {
+                      if (controller.selectedShape != -1) {
+                        controller.shapes[controller.selectedShape]
+                            .strokeStyle = StrokeStyle.solid;
+                      } else {
+                        _sideBarController.strokeStyle = StrokeStyle.solid;
+                      }
+                    setState(() {});  
+                    },
+                    child: MyStrokeStyle(
+                      iconData: const Icon(Icons.horizontal_rule),
+                      isSelected:selectedShape==null? _sideBarController.strokeStyle == StrokeStyle.solid:selectedShape!.strokeStyle==StrokeStyle.solid,
+                    )),
+                GestureDetector(
+                    onTap: () {
+                      if (controller.selectedShape != -1) {
+                        controller.shapes[controller.selectedShape]
+                            .strokeStyle = StrokeStyle.dashedBorder;
+                      } else {
+                        _sideBarController.strokeStyle =
+                            StrokeStyle.dashedBorder;
+                      }
+                      setState(() {});
+                    },
+                    child: MyStrokeStyle(
+                      iconData: const Text(
+                        ' ---',
+                        style: TextStyle(fontSize: Sizes.md),
+                      ),
+                          isSelected:selectedShape==null? _sideBarController.strokeStyle == StrokeStyle.dashedBorder:selectedShape!.strokeStyle==StrokeStyle.dashedBorder,
+                    )),
+              ],
+            )
+          ],
+        ),
       ),
     );
   }
 
-  List<Widget> shapeFactory(String wor) {
-    return List.generate(controller.shapes.length, (index) {
-      Shapes shape = controller.shapes[index];
-      Offset pos = shape.lT;
-      Offset rB = shape.rB;
-      if (shape is Rectangle || shape is Circle || shape is TextFieldRect) {
-        return Positioned.fromRect(
-          rect: Rect.fromPoints(pos, rB),
-          child: MouseRegion(
-            cursor: SystemMouseCursors.click,
-            child: GestureDetector(
-              onTapDown: (TapDownDetails details) {
-                controller.manageTap(index, details.localPosition);
+  backGroundColorPicker(BuildContext context) {
+    return Wrap(
+      direction: Axis.horizontal,
+      runAlignment: WrapAlignment.start,
+      spacing: 5,
+      children: List.generate(5, (strokeIndex) {
+        if (strokeIndex <= 3) {
+          Color constantColor =
+              _sideBarController.backGroundConstantColors[strokeIndex];
+          return InkWell(
+              onTap: () {
+                if (controller.selectedShape != -1) {
+                  Shapes shape = selectedShape!;
+                  if (shape is Circle) {
+                    final MyStack stack = MyStack(
+                        id: shape.id, backgroundColor: shape.backgroundColor);
+                    controller.stack.add(stack);
+                    (controller.shapes[controller.selectedShape] as Circle)
+                        .backgroundColor = constantColor;
+                    controller.dataNotifier.value = 'c';
+                  } else if (shape is Rectangle) {
+                    final MyStack stack = MyStack(
+                        id: shape.id, backgroundColor: shape.backgroundColor);
+                    controller.stack.add(stack);
+                    (controller.shapes[controller.selectedShape] as Rectangle)
+                        .backgroundColor = constantColor;
+                    controller.dataNotifier.value = 'c';
+                  }
+                } else {
+                  _sideBarController.backgroundColor = constantColor;
+                  
+                }
                 setState(() {});
               },
               child: Container(
                 decoration: BoxDecoration(
-                    color: shape.backgroundColor,
-                    borderRadius:
-                        BorderRadius.circular(shape.borderRadius ?? 0),
+                    borderRadius: BorderRadius.circular(2),
                     border: Border.all(
-                      width: shape.strokeWidth,
-                      color: controller.selectedShape == index
-                          ? Colors.blue
-                          : shape.stroke,
+                      color: controller.selectedShape == -1
+                          ? constantColor == _sideBarController.backgroundColor
+                              ? constantColor
+                              : Colors.transparent
+                          : selectedShape is Rectangle
+                              ? (selectedShape as Rectangle).backgroundColor ==
+                                      constantColor
+                                  ? constantColor
+                                  : Colors.transparent
+                              : selectedShape is Circle
+                                  ? (selectedShape as Circle).backgroundColor ==
+                                          constantColor
+                                      ? constantColor
+                                      : Colors.transparent
+                                  : Colors.transparent,
                     )),
-                child: shape.child,
-              ),
-            ),
-          ),
-        );
+                child: Container(
+                  width: 25,
+                  height: 25,
+                  margin: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: constantColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ));
+        } else {
+          return InkWell(
+              onTap: () async {
+                if (controller.selectedShape != -1) {
+                  if (selectedShape is Circle) {
+                    final MyStack stack = MyStack(
+                        id: selectedShape!.id,
+                        backgroundColor:
+                            (selectedShape as Circle).backgroundColor);
+                    controller.stack.add(stack);
+                    (controller.shapes[controller.selectedShape] as Circle)
+                            .backgroundColor =
+                        await showColorPickerDialog(
+                            context, (selectedShape as Circle).backgroundColor,
+                            showColorCode: true);
+                  } else if (selectedShape is Rectangle) {
+                    final MyStack stack = MyStack(
+                        id: selectedShape!.id,
+                        backgroundColor:
+                            (selectedShape as Rectangle).backgroundColor);
+                    controller.stack.add(stack);
+                    (controller.shapes[controller.selectedShape] as Rectangle)
+                            .backgroundColor =
+                        await showColorPickerDialog(context,
+                            (selectedShape as Rectangle).backgroundColor,
+                            showColorCode: true);
+                    controller.dataNotifier.value = 'c';
+                  }
+                } else {
+                  _sideBarController.backgroundColor =
+                      await showColorPickerDialog(
+                          context, _sideBarController.backgroundColor,
+                          showColorCode: true);
+                  
+                }
+                setState(() {});
+              },
+              child: Container(
+                width: 25,
+                height: 25,
+                margin: const EdgeInsets.only(left: 10, top: 3),
+                decoration: BoxDecoration(
+                  color: controller.selectedShape == -1
+                      ? _sideBarController.backgroundColor
+                      : selectedShape is Rectangle
+                          ? (selectedShape as Rectangle).backgroundColor
+                          : selectedShape is Circle
+                              ? (selectedShape as Circle).backgroundColor
+                              : Colors.transparent,
+                  borderRadius: BorderRadius.circular(5),
+                ),
+              ));
+        }
+      }),
+    );
+  }
+
+  Wrap strokeColorPicker(BuildContext context) {
+    return Wrap(
+      spacing: 3,
+      direction: Axis.horizontal,
+      runAlignment: WrapAlignment.start,
+      children: List.generate(5, (strokeIndex) {
+        if (strokeIndex <= 3) {
+          Color constantColor = _sideBarController.constantColors[strokeIndex];
+
+          return InkWell(
+              onTap: () {
+                if (controller.selectedShape != -1) {
+                  final MyStack stack = MyStack(
+                      id: selectedShape!.id, stroke: selectedShape!.stroke);
+                  controller.stack.add(stack);
+                  controller.shapes[controller.selectedShape].stroke =
+                      constantColor;
+                  controller.dataNotifier.value = 'c';
+                } else {
+                  _sideBarController.strokeColor = constantColor;
+                  
+                }
+                setState(() {});
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(2),
+                    border: Border.all(
+                      color: controller.selectedShape == -1
+                          ? constantColor == _sideBarController.strokeColor
+                              ? constantColor
+                              : Colors.transparent
+                          : constantColor == selectedShape!.stroke
+                              ? constantColor
+                              : Colors.transparent,
+                    )),
+                child: Container(
+                  width: 25,
+                  height: 25,
+                  margin: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: constantColor,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ));
+        } else {
+          return InkWell(
+              onTap: () async {
+                if (selectedShape != null) {
+                  final MyStack stack = MyStack(
+                      id: selectedShape!.id, stroke: selectedShape!.stroke);
+                  controller.stack.add(stack);
+                  controller.shapes[controller.selectedShape].stroke =
+                      await showColorPickerDialog(
+                          context, selectedShape!.stroke,
+                          showColorCode: true);
+                  controller.dataNotifier.value = 'c';
+                } else {
+                  _sideBarController.strokeColor = await showColorPickerDialog(
+                      context, _sideBarController.strokeColor,
+                      showColorCode: true);
+                  
+                }
+                setState(() {});
+              },
+              child: Container(
+                width: 25,
+                height: 25,
+                margin: const EdgeInsets.only(left: 10, top: 3),
+                decoration: BoxDecoration(
+                  color: controller.selectedShape == -1
+                      ? _sideBarController.strokeColor
+                      : selectedShape!.stroke,
+                  borderRadius: BorderRadius.circular(5),
+                ),
+              ));
+        }
+      }),
+    );
+  }
+
+  Positioned zoom(double screenWidth, double screenHeight) {
+    return Positioned(
+        left: 10,
+        bottom: 30,
+        child: Row(
+          children: [
+            InkWell(
+                onTap: () {
+                  setState(() {
+                    // controller.zoomOut();
+                  });
+                },
+                child: Container(
+                  width: screenWidth / 30,
+                  height: screenHeight / 20,
+                  decoration: const BoxDecoration(
+                      color: Color(0xFFECECF4),
+                      borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(10),
+                          bottomLeft: Radius.circular(10))),
+                  child: const Icon(Icons.remove),
+                )),
+            InkWell(
+                child: Container(
+              width: screenWidth / 25,
+              height: screenHeight / 20,
+              color: const Color(0xFFECECF4),
+              child: const Center(child: Text('100')),
+            )),
+            InkWell(
+                onTap: () {
+                  setState(() {
+                    // controller.zoomIn();
+                  });
+                },
+                child: Container(
+                  width: screenWidth / 30,
+                  height: screenHeight / 20,
+                  decoration: const BoxDecoration(
+                      color: Color(0xFFECECF4),
+                      borderRadius: BorderRadius.only(
+                          topRight: Radius.circular(10),
+                          bottomRight: Radius.circular(10))),
+                  child: const Icon(Icons.add),
+                )),
+          ],
+        ));
+  }
+
+  List<Widget> shapeFactory() {
+    return List.generate(controller.shapes.length, (index) {
+      Shapes shape = controller.shapes[index];
+      Offset pos = shape.lT;
+      Offset rB = shape.rB;
+      if (shape is Rectangle) {
+        return buildRectangle(pos, rB, index, shape);
+      } else if (shape is Circle) {
+        return buildCircle(pos, rB, index, shape);
+      } else if (shape is TextFieldRect) {
+        return buildTextField(pos, rB, index, shape);
       } else if (shape is Line) {
         return CustomPaint(
           size: const Size(20, 20),
@@ -230,5 +580,111 @@ class _MainPageState extends State<MainPage> {
         return Container();
       }
     });
+  }
+
+  Positioned buildRectangle(Offset pos, Offset rB, int index, Rectangle shape) {
+    return Positioned.fromRect(
+      rect: Rect.fromPoints(pos, rB),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTapDown: (TapDownDetails details) {
+            controller.manageTap(index, details.localPosition);
+            setState(() {});
+          },
+          child: AnimatedContainer(
+            decoration: BoxDecoration(
+                color: shape.backgroundColor.withOpacity(shape.opacity),
+                borderRadius: BorderRadius.circular(shape.borderRadius),
+                border: Border.all(
+                  width: shape.strokeWidth,
+                  color: controller.selectedShape == index
+                      ? Colors.blue
+                      : shape.stroke.withOpacity(shape.opacity),
+                )),
+            duration: const Duration(milliseconds: 100),
+            child: shape.child,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Positioned buildCircle(Offset pos, Offset rB, int index, Circle shape) {
+    return Positioned.fromRect(
+      rect: Rect.fromPoints(pos, rB),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTapDown: (TapDownDetails details) {
+            controller.manageTap(index, details.localPosition);
+            setState(() {});
+          },
+          child: Container(
+            decoration: BoxDecoration(
+                color: shape.backgroundColor.withOpacity(shape.opacity),
+                borderRadius: BorderRadius.circular(shape.borderRadius),
+                border: Border.all(
+                  width: shape.strokeWidth,
+                  color: controller.selectedShape == index
+                      ? Colors.blue
+                      : shape.stroke.withOpacity(shape.opacity),
+                )),
+            child: shape.child,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Positioned buildTextField(
+      Offset pos, Offset rB, int index, TextFieldRect shape) {
+    return Positioned.fromRect(
+      rect: Rect.fromPoints(pos, rB),
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTapDown: (TapDownDetails details) {
+            controller.manageTap(index, details.localPosition);
+            setState(() {});
+          },
+          child: Container(
+            decoration: BoxDecoration(
+                border: Border.all(
+              color: controller.selectedContainerIndex == 8 ||
+                      controller.selectedContainerIndex == 3
+                  ? Colors.blue
+                  : Colors.transparent,
+            )),
+            child: shape.child,
+          ),
+        ),
+      ),
+    );
+  }
+
+  
+}
+
+class MyStrokeStyle extends StatelessWidget {
+  const MyStrokeStyle(
+      {super.key, required this.iconData, required this.isSelected});
+  final Widget iconData;
+  final bool isSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      width: 25,
+      height: 25,
+      decoration: BoxDecoration(
+          color: isSelected ? Colors.blue : null,
+          borderRadius: BorderRadius.circular(5),
+          border: Border.all(
+            color: isSelected ? Colors.transparent : Colors.transparent,
+          )),
+      duration: const Duration(milliseconds: 200),
+      child: iconData,
+    );
   }
 }

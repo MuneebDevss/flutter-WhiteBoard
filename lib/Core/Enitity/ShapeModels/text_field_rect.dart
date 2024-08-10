@@ -1,13 +1,16 @@
+import 'package:flutter/material.dart';
 import 'package:white_board/Core/Enitity/shape.dart';
 
 class TextFieldRect extends Shapes {
-
-  TextFieldRect({
-    super.strokeWidth=4,super.stroke,super.opacity,super.strokeStyle,
-    super.backgroundColor,
-    super.borderRadius,
-    super.child,
-    super.lT,
-    super.rB
-  });
+  
+  Widget? child;
+  
+  TextFieldRect(
+      {super.strokeWidth = 4,
+      super.stroke,
+      super.opacity,
+      super.strokeStyle,
+      this.child,
+      super.lT,
+      super.rB, required super.id});
 }

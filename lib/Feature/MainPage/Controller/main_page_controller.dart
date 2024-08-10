@@ -1,9 +1,6 @@
 import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:white_board/Core/Constants/enum.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/brush.dart';
@@ -11,6 +8,7 @@ import 'package:white_board/Core/Enitity/ShapeModels/circle.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/line.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/rectangle.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/text_field_rect.dart';
+import 'package:white_board/Core/Enitity/my_stack.dart';
 import 'package:white_board/Core/HelpingFunctions/image_picker.dart';
 import 'package:white_board/Feature/MainPage/Controller/side_bar_controller.dart';
 import 'package:white_board/Feature/MainPage/Presentation/Widgets/selection_container.dart';
@@ -19,13 +17,20 @@ import '../../../Core/Enitity/shape.dart';
 
 class MainPageController {
   //Properties
+  final ValueNotifier<String> dataNotifier =
+      ValueNotifier<String>('Initial Data');
   bool first = false;
-  List<Shapes> shapes = [];
-  int selectedShape = -1;
+  // double zoom = 1;
+  // Offset startPosition = const Offset(0, 0);
+  // Offset zoomtranslatePosition = const Offset(0, 0);
+  // Offset previousZoomPositiion = const Offset(0, 0);
   late Offset clickedPositioned;
+  int selectedShape = -1;
+  int selectedContainerIndex = -1;
   Widget? image;
   SystemMouseCursor cursor = SystemMouseCursors.click;
-  int selectedContainerIndex = -1;
+  List<MyStack> stack = [];
+  List<Shapes> shapes = [];
   final List<SelectedContainer> selectedContainer = [
     SelectedContainer(
       button: const Icon(Icons.square_outlined),
@@ -62,6 +67,7 @@ class MainPageController {
     if (selectedContainerIndex == 8) //Eraser is selected
     {
       if (selectedShape == index) {
+        addToStack(shapes[index]);
         shapes.removeAt(selectedShape);
         if (shapes.isEmpty) {
           shapes = [];
@@ -82,17 +88,31 @@ class MainPageController {
     }
   }
 
-  void storePointerDownPosition(PointerDownEvent offsets, BuildContext context,
+  // void zoomIn() {
+  //   zoom += 0.1;
+  // }
+
+  // void zoomOut() {
+  //   if (zoom > 1) {
+  //     zoom -= 0.1;
+  //   }
+  // }
+
+  void storePointerDownPosition(DragStartDetails offsets, BuildContext context,
       SideBarController controller) {
     final box = context.findRenderObject() as RenderBox;
-    final details = box.globalToLocal(offsets.position);
+    final details = box.globalToLocal(offsets.localPosition);
+    int length = shapes.length;
+    // if (zoom > 1) {
+    //   previousZoomPositiion = details;
+    // }
     //if not drawing any shape (deleting or grabing the shape)
     if (selectedContainerIndex == 8 ||
         selectedContainerIndex == 3 ||
         selectedContainerIndex == -1) {
       //tapped on a line
 
-      // tapp position for the grab
+      // tap position for the grab
       clickedPositioned = details;
       for (int x = 0; x < shapes.length; x++) {
         if (shapes[x] is Line) {
@@ -100,9 +120,13 @@ class MainPageController {
           double dx = ((line.lT + line.rB) / 2).dx;
           double dy = ((line.lT + line.rB) / 2).dy;
           if ((dx - 10 <= details.dx && dx + 10 >= details.dx) &&
-              (dy - 10 <= details.dy - 100 && dy + 10 >= details.dy - 100)) {
+              (dy - 10 <= details.dy && dy + 10 >= details.dy)) {
             if (selectedContainerIndex == 8 && selectedShape == x) {
               shapes.removeAt(selectedShape);
+              if (shapes.isEmpty) {
+                shapes = [];
+              }
+              selectedShape = -1;
             } else if (selectedShape == x) {
               selectedShape = -1;
             } else if (selectedShape != x) {
@@ -113,36 +137,39 @@ class MainPageController {
       }
     } else if (selectedContainerIndex == 0) {
       Shapes shape = Rectangle(
-        lT: Offset(details.dx, details.dy - 100),
-        rB: Offset(details.dx, details.dy - 100),
+        lT: Offset(details.dx, details.dy),
+        rB: Offset(details.dx, details.dy),
         stroke: controller.strokeColor,
         strokeStyle: controller.strokeStyle,
         strokeWidth: controller.strokeWidth,
         backgroundColor: controller.backgroundColor,
+        id: length,
       );
       shapes.add(shape);
     } else if (selectedContainerIndex == 1) {
       Shapes shape = Circle(
-        lT: Offset(details.dx, details.dy - 100),
-        rB: Offset(details.dx, details.dy - 100),
+        lT: Offset(details.dx, details.dy),
+        rB: Offset(details.dx, details.dy),
         stroke: controller.strokeColor,
         strokeStyle: controller.strokeStyle,
         strokeWidth: controller.strokeWidth,
         backgroundColor: controller.backgroundColor,
+        id: length,
       );
       shapes.add(shape);
     } else if (selectedContainerIndex == 2) {
       Shapes shape = Line(
-        lT: Offset(details.dx, details.dy - 100),
-        rB: Offset(details.dx, details.dy - 100),
+        lT: Offset(details.dx, details.dy),
+        rB: Offset(details.dx, details.dy),
         stroke: controller.strokeColor,
         strokeStyle: controller.strokeStyle,
         strokeWidth: controller.strokeWidth,
+        id: length,
       );
       shapes.add(shape);
     } else if (selectedContainerIndex == 4) {
       Shapes shape = TextFieldRect(
-          lT: Offset(details.dx, details.dy - 100),
+          lT: Offset(details.dx, details.dy),
           rB: Offset(details.dx + 50, details.dy - 50),
           stroke: Colors.transparent,
           strokeStyle: StrokeStyle.dashedBorder,
@@ -150,22 +177,24 @@ class MainPageController {
             style: const TextStyle(fontSize: 12, color: Colors.black),
             fontSize: 12,
             node: FocusNode(),
-          ));
+          ),
+          id: length);
 
       shapes.add(shape);
     } else if (selectedContainerIndex == 5) {
       Shapes shape = Brush(
-        points: [Offset(details.dx, details.dy - 100)],
+        points: [Offset(details.dx, details.dy)],
         stroke: controller.strokeColor,
         strokeStyle: controller.strokeStyle,
         strokeWidth: controller.strokeWidth,
+        id: length,
       );
       shapes.add(shape);
     } else if (selectedContainerIndex == 7) {
       if (image != null) {
         Shapes shape = Rectangle(
-            lT: Offset(details.dx, details.dy - 100),
-            rB: Offset(details.dx, details.dy - 100),
+            lT: Offset(details.dx, details.dy),
+            rB: Offset(details.dx, details.dy),
             stroke: controller.strokeColor,
             strokeStyle: controller.strokeStyle,
             strokeWidth: controller.strokeWidth,
@@ -173,22 +202,26 @@ class MainPageController {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: image,
-            ));
+            ),
+            id: length);
         shapes.add(shape);
       }
     }
 
     //New Shape gets Selected By default
     if (selectedContainerIndex != 8 &&
+        selectedContainerIndex != 6 &&
+        selectedContainerIndex != 5 &&
         selectedContainerIndex != 3 &&
         selectedContainerIndex != -1) {
       selectedShape = shapes.length - 1;
     }
   }
 
-  void storePointerUpdatePosition(PointerMoveEvent details) {
+  void storePointerUpdatePosition(DragUpdateDetails details) {
     Offset position = details.localPosition;
-    if (selectedContainerIndex == -1) {
+
+    if (selectedShape == -1 && selectedShape != -1) {
       Shapes shape = shapes[selectedShape];
       //handling shape size and drag and drop
       handleShapeSizing(shape, position);
@@ -201,7 +234,7 @@ class MainPageController {
     } else if (selectedContainerIndex == 2) {
       makeLine(position);
     } else if (selectedContainerIndex == 3) {
-      grab(Offset(position.dx, position.dy + 100));
+      grab(Offset(position.dx, position.dy));
     } else if (selectedContainerIndex == 5) {
       paint(position);
     } else if (selectedContainerIndex == 6) {
@@ -270,28 +303,28 @@ class MainPageController {
   }
 
   void eraseBrush(Offset position) {
+    List<int> temp = [];
     for (int index = 0; index < shapes.length; index++) {
       final Shapes shape = shapes[index];
-      List<Offset> temp = [];
       if (shape is Brush) {
-        //Look for all the points in the brush area
+        // Look for all the points in the brush area
         for (Offset point in shape.points) {
           if (((point.dx - 10) <= position.dx &&
                   (point.dx + 10) >= position.dx) &&
               ((point.dy - 10) <= position.dy &&
                   (point.dy + 10) >= position.dy)) {
-            temp.add(point);
+            temp.add(index);
+            break;
           }
-          // remove all those points
-          for (Offset point in temp) {
-            shape.points.remove(point);
-          }
-        }
-        //Remove the brush sketch if it has not point
-        if (shape.points.isEmpty) {
-          shapes.removeAt(index);
         }
       }
+    }
+
+    for (int i = temp.length - 1; i >= 0; i--) {
+      shapes.removeAt(temp[i]);
+    }
+    if (shapes.isEmpty) {
+      shapes = [];
     }
   }
 
@@ -299,13 +332,80 @@ class MainPageController {
     if (isWeb) {
       String? pickedImage = await pickWebImage();
       if (pickedImage != null) {
-        image = Image.network(pickedImage,fit: BoxFit.cover,);
+        image = Image.network(
+          pickedImage,
+          fit: BoxFit.cover,
+        );
       }
     } else {
       File? pickedImage = await pickImage();
       if (pickedImage != null) {
-        image = Image.file(pickedImage,fit: BoxFit.cover);
+        image = Image.file(pickedImage, fit: BoxFit.cover);
       }
     }
+  }
+
+  void addToStack(Shapes shape) {
+    if (shape is Rectangle) {
+      addRectToStack(shape);
+    } else if (shape is Circle) {
+      addCircleToStack(shape);
+    } else if (shape is TextFieldRect) {
+      addTextFieldToStack(shape);
+    } else if (shape is Line) {
+      addLineToStack(shape);
+    }
+  }
+
+  void addLineToStack(Line shape) {
+    return stack.add(MyStack(
+      id: shape.id,
+      lT: shape.lT,
+      rB: shape.rB,
+      opacity: shape.opacity,
+      stroke: shape.stroke,
+      strokeStyle: shape.strokeStyle,
+      strokeWidth: shape.strokeWidth,
+    ));
+  }
+
+  void addTextFieldToStack(TextFieldRect shape) {
+    return stack.add(MyStack(
+        id: shape.id,
+        lT: shape.lT,
+        rB: shape.rB,
+        opacity: shape.opacity,
+        stroke: shape.stroke,
+        strokeStyle: shape.strokeStyle,
+        strokeWidth: shape.strokeWidth,
+        child: shape.child));
+  }
+
+  void addRectToStack(Rectangle shape) {
+    return stack.add(MyStack(
+        id: shape.id,
+        lT: shape.lT,
+        rB: shape.rB,
+        borderRadius: shape.borderRadius,
+        opacity: shape.opacity,
+        stroke: shape.stroke,
+        strokeStyle: shape.strokeStyle,
+        backgroundColor: shape.backgroundColor,
+        strokeWidth: shape.strokeWidth,
+        child: shape.child));
+  }
+
+  void addCircleToStack(Circle shape) {
+    return stack.add(MyStack(
+        id: shape.id,
+        lT: shape.lT,
+        rB: shape.rB,
+        borderRadius: shape.borderRadius,
+        opacity: shape.opacity,
+        stroke: shape.stroke,
+        strokeStyle: shape.strokeStyle,
+        backgroundColor: shape.backgroundColor,
+        strokeWidth: shape.strokeWidth,
+        child: shape.child));
   }
 }

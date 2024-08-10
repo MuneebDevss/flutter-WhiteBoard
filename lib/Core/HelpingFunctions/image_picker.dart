@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:universal_html/html.dart' as html;
-import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 Future<File?> pickImage() async {
@@ -62,10 +61,8 @@ Future<String?> pickWebImage() async {
     await reader.onLoadEnd.first;
 
     image = reader.result as String;
-
-    print("File read complete"); // Debugging statement
   } else {
-    print("No file selected or file list is empty"); // Debugging statement
+    
   }
   return image;
 }
