@@ -17,8 +17,7 @@ import '../../../Core/Enitity/shape.dart';
 
 class MainPageController {
   //Properties
-  final ValueNotifier<String> dataNotifier =
-      ValueNotifier<String>('Initial Data');
+
   bool first = false;
   // double zoom = 1;
   // Offset startPosition = const Offset(0, 0);
@@ -221,20 +220,15 @@ class MainPageController {
   void storePointerUpdatePosition(DragUpdateDetails details) {
     Offset position = details.localPosition;
 
-    if (selectedShape == -1 && selectedShape != -1) {
-      Shapes shape = shapes[selectedShape];
-      //handling shape size and drag and drop
-      handleShapeSizing(shape, position);
-    }
     // handling shape making
-    else if (selectedContainerIndex == 0 || selectedContainerIndex == 7) {
+    if (selectedContainerIndex == 0 || selectedContainerIndex == 7) {
       makeRectangle(position);
     } else if (selectedContainerIndex == 1) {
       makeCircle(position);
     } else if (selectedContainerIndex == 2) {
       makeLine(position);
     } else if (selectedContainerIndex == 3) {
-      grab(Offset(position.dx, position.dy));
+      grab(Offset(position.dx, position.dy)); // Shapes resizing
     } else if (selectedContainerIndex == 5) {
       paint(position);
     } else if (selectedContainerIndex == 6) {
@@ -247,31 +241,14 @@ class MainPageController {
     shapes[length].rB = details;
   }
 
-  void handleShapeSizing(Shapes shape, Offset position) {
-    //tapped on bottom right
-    if (shape.lT.dx + shape.rB.dx == position.dx &&
-        shape.lT.dy + shape.rB.dy == position.dy) {
-      //TODO
-    }
-    //tapped on bottom left
-    else if (shape.lT.dx == position.dx &&
-        shape.lT.dy + shape.rB.dy == position.dy) {
-      //TODO
-    }
-    //tapped on top left
-    else if (shape.lT.dx == position.dx && shape.lT.dy == position.dy) {
-      //TODO
-    }
-    //tapped on top right
-    else if (shape.lT.dx + shape.rB.dx == position.dx &&
-        shape.lT.dy == position.dy) {
-      //TODO
-    }
-  }
-
   void makeCircle(Offset details) {
     int length = shapes.length - 1;
     shapes[length].rB = details;
+    if (details.dx > details.dy) {
+      (shapes[length] as Circle).borderRadius = details.dx;
+    } else {
+      (shapes[length] as Circle).borderRadius = details.dy;
+    }
   }
 
   void makeLine(Offset details) {
@@ -283,13 +260,148 @@ class MainPageController {
 
   void grab(Offset position) {
     if (selectedShape != -1) {
-      Offset lt = shapes[selectedShape].lT;
+      Offset lT = shapes[selectedShape].lT;
       Offset rB = shapes[selectedShape].rB;
-      //new position of cursor relative to the previos/Clicked position
-      Offset delta = position - clickedPositioned;
-      shapes[selectedShape].lT = lt + delta;
-      shapes[selectedShape].rB = rB + delta;
-      clickedPositioned = position;
+
+      if (shapes[selectedShape] is Rectangle) {
+        //tapped on bottom except corners
+        if (lT.dx < position.dx &&
+            position.dx < rB.dx &&
+            rB.dy - 10 < position.dy &&
+            rB.dy + 10 > position.dy) {
+          shapes[selectedShape].rB =
+              Offset(shapes[selectedShape].rB.dx, position.dy);
+        }
+        //tapped on bottom except corners
+        else if (lT.dx < position.dx &&
+            position.dx < rB.dx &&
+            lT.dy - 10 < position.dy &&
+            lT.dy + 10 > position.dy) {
+          shapes[selectedShape].lT =
+              Offset(shapes[selectedShape].lT.dx, position.dy);
+        }
+        //tapped on right except corners
+        else if (lT.dy < position.dy &&
+            position.dy < rB.dy &&
+            rB.dx - 10 < position.dx &&
+            rB.dx + 10 > position.dx) {
+          shapes[selectedShape].rB =
+              Offset(position.dx, shapes[selectedShape].rB.dy);
+        }
+        //tapped on left except corners
+        else if (lT.dy < position.dy &&
+            position.dy < rB.dy &&
+            lT.dx - 10 < position.dx &&
+            lT.dx + 10 > position.dx) {
+          shapes[selectedShape].lT =
+              Offset(position.dx, shapes[selectedShape].lT.dy);
+        }
+        //tapped on bottom right
+        else if (lT.dx + rB.dx == position.dx && rB.dy == position.dy) {
+        }
+        //tapped on bottom left
+        else if (lT.dx == position.dx && rB.dy == position.dy) {
+          shapes[selectedShape].lT = Offset(position.dx, lT.dy);
+          shapes[selectedShape].rB = Offset(rB.dx, position.dy);
+        }
+        //tapped on top left
+        else if (lT.dx == position.dx && lT.dy == position.dy) {
+          //TODO
+        }
+        //tapped on top right
+        else if (lT.dx + rB.dx == position.dx && lT.dy == position.dy) {
+          //TODO
+        }
+        //new position of cursor relative to the previos/Clicked position
+        else {
+          Offset delta = position - clickedPositioned;
+          shapes[selectedShape].lT = lT + delta;
+          shapes[selectedShape].rB = rB + delta;
+          clickedPositioned = position;
+        }
+      } else if (shapes[selectedShape] is Circle) {
+        //tapped on bottom except corners
+        if (lT.dx < position.dx &&
+            position.dx < rB.dx &&
+            rB.dy - 10 < position.dy &&
+            rB.dy + 10 > position.dy) {
+          shapes[selectedShape].rB =
+              Offset(shapes[selectedShape].rB.dx, position.dy);
+        }
+        //tapped on bottom except corners
+        else if (lT.dx < position.dx &&
+            position.dx < rB.dx &&
+            lT.dy - 10 < position.dy &&
+            lT.dy + 10 > position.dy) {
+          shapes[selectedShape].lT =
+              Offset(shapes[selectedShape].lT.dx, position.dy);
+        }
+        //tapped on right except corners
+        else if (lT.dy < position.dy &&
+            position.dy < rB.dy &&
+            rB.dx - 10 < position.dx &&
+            rB.dx + 10 > position.dx) {
+          shapes[selectedShape].rB =
+              Offset(position.dx, shapes[selectedShape].rB.dy);
+        }
+        //tapped on left except corners
+        else if (lT.dy < position.dy &&
+            position.dy < rB.dy &&
+            lT.dx - 10 < position.dx &&
+            lT.dx + 10 > position.dx) {
+          shapes[selectedShape].lT =
+              Offset(position.dx, shapes[selectedShape].lT.dy);
+        }
+        //tapped on bottom right
+        else if (lT.dx + rB.dx == position.dx && rB.dy == position.dy) {
+        }
+        //tapped on bottom left
+        else if (lT.dx == position.dx && rB.dy == position.dy) {
+          shapes[selectedShape].lT = Offset(position.dx, lT.dy);
+          shapes[selectedShape].rB = Offset(rB.dx, position.dy);
+        }
+        //tapped on top left
+        else if (lT.dx == position.dx && lT.dy == position.dy) {
+          //TODO
+        }
+        //tapped on top right
+        else if (lT.dx + rB.dx == position.dx && lT.dy == position.dy) {
+          //TODO
+        }
+        //new position of cursor relative to the previos/Clicked position
+        else {
+          Offset delta = position - clickedPositioned;
+          shapes[selectedShape].lT = lT + delta;
+          shapes[selectedShape].rB = rB + delta;
+          clickedPositioned = position;
+        }
+      } else if (shapes[selectedShape] is Line) {
+        final Offset mid=(lT+rB)/2;
+        //Clicked onstart position
+        if (position.dx >= lT.dx - 10 &&
+            position.dx <= lT.dx + 10 &&
+            position.dy >= lT.dy - 10 &&
+            position.dy <= lT.dy + 10) {
+          shapes[selectedShape].lT = position;
+        }
+        //Clicked on end position
+        else if (position.dx >= rB.dx - 10 &&
+            position.dx <= rB.dx + 10 &&
+            position.dy >= rB.dy - 10 &&
+            position.dy <= rB.dy + 10) {
+          shapes[selectedShape].rB = position;
+        }
+        //grabing
+        else if (position.dx >= mid.dx - 10 &&
+            position.dx <= mid.dx + 10 &&
+            position.dy >= mid.dy - 10 &&
+            position.dy <= mid.dy + 10) {
+          Offset delta = position - clickedPositioned;
+          shapes[selectedShape].lT = lT + delta;
+          shapes[selectedShape].rB = rB + delta;
+          clickedPositioned = position;
+        }
+      }
     }
   }
 
@@ -407,5 +519,60 @@ class MainPageController {
         backgroundColor: shape.backgroundColor,
         strokeWidth: shape.strokeWidth,
         child: shape.child));
+  }
+
+  void setMouseHover(PointerHoverEvent event) {
+    Offset position = Offset(event.position.dx, event.position.dy - 100);
+    if (selectedShape != -1) {
+      Offset lT = shapes[selectedShape].lT;
+      Offset rB = shapes[selectedShape].rB;
+      //tapped on bottom except corners
+      if (lT.dx < position.dx &&
+          position.dx < rB.dx &&
+          rB.dy - 10 < position.dy &&
+          rB.dy + 10 > position.dy) {
+        cursor = SystemMouseCursors.resizeUpDown;
+      }
+      //tapped on top except corners
+      else if (lT.dx < position.dx &&
+          position.dx < rB.dx &&
+          lT.dy - 10 < position.dy &&
+          lT.dy + 10 > position.dy) {
+        cursor = SystemMouseCursors.resizeUpDown;
+      }
+      //tapped on right except corners
+      else if (lT.dy < position.dy &&
+          position.dy < rB.dy &&
+          rB.dx - 10 < position.dx &&
+          rB.dx + 10 > position.dx) {
+        cursor = SystemMouseCursors.resizeLeftRight;
+      }
+      //tapped on left except corners
+      else if (lT.dy < position.dy &&
+          position.dy < rB.dy &&
+          lT.dx - 10 < position.dx &&
+          lT.dx + 10 > position.dx) {
+        cursor = SystemMouseCursors.resizeLeftRight;
+      }
+      //tapped on bottom right
+      else if (lT.dx + rB.dx == position.dx && rB.dy == position.dy) {
+      }
+      //tapped on bottom left
+      else if (lT.dx == position.dx && rB.dy == position.dy) {
+        cursor = SystemMouseCursors.resizeDownLeft;
+      }
+      //tapped on top left
+      else if (lT.dx == position.dx && lT.dy == position.dy) {
+        //TODO
+      }
+      //tapped on top right
+      else if (lT.dx + rB.dx == position.dx && lT.dy == position.dy) {
+        //TODO
+      }
+      //new position of cursor relative to the previos/Clicked position
+      else {
+        cursor = SystemMouseCursors.grab;
+      }
+    }
   }
 }

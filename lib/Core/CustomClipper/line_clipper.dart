@@ -23,9 +23,12 @@ class LinePainter extends CustomPainter {
     canvas.drawLine(startPosition, endPosition, paint);
     if (isGrabAble) {
       Offset midpoint = (startPosition + endPosition) / 2;
-
+      Offset midpoint2 = (startPosition);
+      Offset midpoint3 = (endPosition);
       Path path = Path();
       path.addOval(Rect.fromCircle(center: midpoint, radius: 10));
+      path.addOval(Rect.fromCircle(center: midpoint2, radius: 10));
+      path.addOval(Rect.fromCircle(center: midpoint3, radius: 10));
       // Draw the path on the canvas
       canvas.drawPath(path, paint..color = Colors.blue);
     }

@@ -4,8 +4,7 @@ import 'package:white_board/Core/Constants/Color/color_palette.dart';
 import 'package:white_board/Core/Constants/Size/sizes.dart';
 import 'package:white_board/Core/Constants/enum.dart';
 import 'package:white_board/Feature/MainPage/Controller/side_bar_controller.dart';
-import 'package:white_board/Feature/MainPage/Presentation/Widgets/side_bar.dart';
-import 'package:white_board/Feature/MainPage/Presentation/main_page.dart';
+import 'package:white_board/Feature/MainPage/Presentation/Widgets/side_bar_stroke.dart';
 
 class TextFieldSideBar extends StatefulWidget {
   const TextFieldSideBar(

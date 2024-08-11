@@ -16,7 +16,7 @@ import 'package:white_board/Core/Enitity/shape.dart';
 import 'package:white_board/Feature/MainPage/Controller/main_page_controller.dart';
 import 'package:white_board/Feature/MainPage/Controller/side_bar_controller.dart';
 import 'package:white_board/Feature/MainPage/Presentation/Widgets/selected_shape.dart';
-import 'package:white_board/Feature/MainPage/Presentation/Widgets/side_bar.dart';
+import 'package:white_board/Feature/MainPage/Presentation/Widgets/side_bar_stroke.dart';
 import 'package:white_board/Feature/MainPage/Presentation/Widgets/textfield_side_bar.dart';
 
 class MainPage extends StatefulWidget {
@@ -59,104 +59,103 @@ class MainPageState extends State<MainPage> {
       appBar: AppBar(),
       drawer: const Drawer(),
       body: SizedBox(
-            width: double.maxFinite,
-            height: double.infinity,
-            child: Column(
-              children: [
-                Container(
-                  alignment: Alignment.center,
-                  width: screenWidth - (screenWidth / 2),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: const [
-                      BoxShadow(
-                        blurRadius: 5,
-                        color: TColors.grey,
-                        blurStyle: BlurStyle.outer,
-                      )
-                    ],
+        width: double.maxFinite,
+        height: double.infinity,
+        child: Column(
+          children: [
+            Container(
+              alignment: Alignment.center,
+              width: screenWidth - (screenWidth / 2),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: const [
+                  BoxShadow(
+                    blurRadius: 5,
+                    color: TColors.grey,
+                    blurStyle: BlurStyle.outer,
+                  )
+                ],
+              ),
+              child: Wrap(
+                spacing: 12,
+                children: List.generate(
+                  controller.selectedContainer.length,
+                  (index) => GestureDetector(
+                    onTap: () async {
+                      if (index == 7) {
+                        controller.pickTheImage(isWeb);
+                      }
+                      setState(() {
+                        controller.selectedContainerIndex == index
+                            ? controller.selectedContainerIndex = -1
+                            : controller.selectedContainerIndex = index;
+                      });
+                    },
+                    child: SelectShape(
+                      screenHeight: screenHeight,
+                      button: controller.selectedContainer[index].button,
+                      isSelected: controller.selectedContainerIndex == index,
+                    ),
                   ),
-                  child: Wrap(
-                    spacing: 12,
-                    children: List.generate(
-                      controller.selectedContainer.length,
-                      (index) => GestureDetector(
-                        onTap: () async {
-                          if (index == 7) {
-                            controller.pickTheImage(isWeb);
-                          }
-                          setState(() {
-                            controller.selectedContainerIndex == index
-                                ? controller.selectedContainerIndex = -1
-                                : controller.selectedContainerIndex = index;
-                          });
-                        },
-                        child: SelectShape(
-                          screenHeight: screenHeight,
-                          button: controller.selectedContainer[index].button,
-                          isSelected:
-                              controller.selectedContainerIndex == index,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Container(
+                color: Colors.transparent,
+                width: screenWidth,
+                height: screenHeight - Sizes.appBarHeight - 50,
+                child: Stack(
+                  children: [
+                    GestureDetector(
+                      onPanStart: (event) {
+                        controller.storePointerDownPosition(
+                            event, context, _sideBarController);
+                        setState(() {});
+                      },
+                      onPanUpdate: (event) {
+                        controller.storePointerUpdatePosition(event);
+                        setState(() {});
+                      },
+                      child: Container(
+                        color: Colors.transparent,
+                        width: screenWidth,
+                        height: screenHeight - Sizes.appBarHeight,
+                        child: Stack(
+                          children: shapeFactory(),
                         ),
                       ),
                     ),
-                  ),
+                    if (controller.selectedContainerIndex != 3 ||
+                        controller.selectedShape ==
+                            -1) //do not show while grabing or reshaping
+                      Positioned(
+                          left: 10,
+                          top: 10,
+                          child: controller.selectedContainerIndex != 4
+                              ? controller.selectedShape == -1
+                                  ? shapesSideBar(screenWidth)
+                                  : controller.shapes[controller.selectedShape]
+                                          is TextFieldRect
+                                      ? TextFieldSideBar(
+                                          controller: _sideBarController,
+                                          screenWidth: screenWidth,
+                                        )
+                                      : shapesSideBar(screenWidth)
+                              : TextFieldSideBar(
+                                  controller: _sideBarController,
+                                  screenWidth: screenWidth,
+                                )),
+                    //zoom
+                    zoom(screenWidth, screenHeight),
+                    //Undo Redo
+                  ],
                 ),
-                Expanded(
-                  child: Container(
-                    color: Colors.transparent,
-                    width: screenWidth,
-                    height: screenHeight - Sizes.appBarHeight - 50,
-                    child: Stack(
-                      children: [
-                        GestureDetector(
-                          onPanStart: (event) {
-                            controller.storePointerDownPosition(
-                                event, context, _sideBarController);
-                            setState(() {});
-                          },
-                          onPanUpdate: (event) {
-                            controller.storePointerUpdatePosition(event);
-                            setState(() {});
-                          },
-                          child: Container(
-                            color: Colors.transparent,
-                            width: screenWidth,
-                            height: screenHeight - Sizes.appBarHeight,
-                            child: Stack(
-                              children: shapeFactory(),
-                            ),
-                          ),
-                        ),
-                        if (controller.selectedContainerIndex != 3 ||
-                            controller.selectedContainerIndex !=
-                                8) //do not show while grabing or deleting
-                          Positioned(
-                              left: 10,
-                              top: 10,
-                              child: controller.selectedContainerIndex != 4
-                                  ? controller.selectedShape == -1
-                                      ? shapesSideBar(screenWidth)
-                                      : controller.shapes[controller
-                                              .selectedShape] is TextFieldRect
-                                          ? TextFieldSideBar(
-                                              controller: _sideBarController,
-                                              screenWidth: screenWidth,
-                                            )
-                                          : shapesSideBar(screenWidth)
-                                  : TextFieldSideBar(
-                                      controller: _sideBarController,
-                                      screenWidth: screenWidth,
-                                    )),
-                        //zoom
-                        zoom(screenWidth, screenHeight),
-                        //Undo Redo
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -208,11 +207,9 @@ class MainPageState extends State<MainPage> {
                       : selectedShape!.opacity,
                   onChanged: (val) {
                     if (controller.selectedShape != -1) {
-                      controller.shapes[controller.selectedShape]
-                          .opacity = val;
-                      
+                      controller.shapes[controller.selectedShape].opacity = val;
                     } else {
-                    _sideBarController.opacity = val;
+                      _sideBarController.opacity = val;
                     }
                     setState(() {});
                   }),
@@ -222,8 +219,8 @@ class MainPageState extends State<MainPage> {
             ),
             Text('Stroke width', style: Theme.of(context).textTheme.bodySmall),
             Slider(
-              min: 1,
-              max: 20,
+                min: 1,
+                max: 20,
                 label: '${_sideBarController.opacity}',
                 mouseCursor: SystemMouseCursors.grab,
                 activeColor: Colors.blue,
@@ -236,7 +233,6 @@ class MainPageState extends State<MainPage> {
                         val;
                   } else {
                     _sideBarController.strokeWidth = val;
-                    
                   }
                   setState(() {});
                 }),
@@ -261,11 +257,13 @@ class MainPageState extends State<MainPage> {
                       } else {
                         _sideBarController.strokeStyle = StrokeStyle.solid;
                       }
-                    setState(() {});  
+                      setState(() {});
                     },
                     child: MyStrokeStyle(
                       iconData: const Icon(Icons.horizontal_rule),
-                      isSelected:selectedShape==null? _sideBarController.strokeStyle == StrokeStyle.solid:selectedShape!.strokeStyle==StrokeStyle.solid,
+                      isSelected: selectedShape == null
+                          ? _sideBarController.strokeStyle == StrokeStyle.solid
+                          : selectedShape!.strokeStyle == StrokeStyle.solid,
                     )),
                 GestureDetector(
                     onTap: () {
@@ -283,7 +281,11 @@ class MainPageState extends State<MainPage> {
                         ' ---',
                         style: TextStyle(fontSize: Sizes.md),
                       ),
-                          isSelected:selectedShape==null? _sideBarController.strokeStyle == StrokeStyle.dashedBorder:selectedShape!.strokeStyle==StrokeStyle.dashedBorder,
+                      isSelected: selectedShape == null
+                          ? _sideBarController.strokeStyle ==
+                              StrokeStyle.dashedBorder
+                          : selectedShape!.strokeStyle ==
+                              StrokeStyle.dashedBorder,
                     )),
               ],
             )
@@ -312,18 +314,15 @@ class MainPageState extends State<MainPage> {
                     controller.stack.add(stack);
                     (controller.shapes[controller.selectedShape] as Circle)
                         .backgroundColor = constantColor;
-                    controller.dataNotifier.value = 'c';
                   } else if (shape is Rectangle) {
                     final MyStack stack = MyStack(
                         id: shape.id, backgroundColor: shape.backgroundColor);
                     controller.stack.add(stack);
                     (controller.shapes[controller.selectedShape] as Rectangle)
                         .backgroundColor = constantColor;
-                    controller.dataNotifier.value = 'c';
                   }
                 } else {
                   _sideBarController.backgroundColor = constantColor;
-                  
                 }
                 setState(() {});
               },
@@ -383,14 +382,12 @@ class MainPageState extends State<MainPage> {
                         await showColorPickerDialog(context,
                             (selectedShape as Rectangle).backgroundColor,
                             showColorCode: true);
-                    controller.dataNotifier.value = 'c';
                   }
                 } else {
                   _sideBarController.backgroundColor =
                       await showColorPickerDialog(
                           context, _sideBarController.backgroundColor,
                           showColorCode: true);
-                  
                 }
                 setState(() {});
               },
@@ -431,10 +428,8 @@ class MainPageState extends State<MainPage> {
                   controller.stack.add(stack);
                   controller.shapes[controller.selectedShape].stroke =
                       constantColor;
-                  controller.dataNotifier.value = 'c';
                 } else {
                   _sideBarController.strokeColor = constantColor;
-                  
                 }
                 setState(() {});
               },
@@ -471,12 +466,10 @@ class MainPageState extends State<MainPage> {
                       await showColorPickerDialog(
                           context, selectedShape!.stroke,
                           showColorCode: true);
-                  controller.dataNotifier.value = 'c';
                 } else {
                   _sideBarController.strokeColor = await showColorPickerDialog(
                       context, _sideBarController.strokeColor,
                       showColorCode: true);
-                  
                 }
                 setState(() {});
               },
@@ -586,24 +579,38 @@ class MainPageState extends State<MainPage> {
     return Positioned.fromRect(
       rect: Rect.fromPoints(pos, rB),
       child: MouseRegion(
-        cursor: SystemMouseCursors.click,
+        onHover: (event) {
+          if (controller.selectedContainerIndex == 3) {
+            controller.setMouseHover(event);
+            setState(() {});
+          }
+        },
+        cursor: controller.cursor,
         child: GestureDetector(
           onTapDown: (TapDownDetails details) {
             controller.manageTap(index, details.localPosition);
             setState(() {});
           },
-          child: AnimatedContainer(
+          child: Container(
             decoration: BoxDecoration(
-                color: shape.backgroundColor.withOpacity(shape.opacity),
-                borderRadius: BorderRadius.circular(shape.borderRadius),
-                border: Border.all(
-                  width: shape.strokeWidth,
+              border: Border.all(
                   color: controller.selectedShape == index
                       ? Colors.blue
-                      : shape.stroke.withOpacity(shape.opacity),
-                )),
-            duration: const Duration(milliseconds: 100),
-            child: shape.child,
+                      : Colors.transparent,
+                  width: 2),
+            ),
+            child: AnimatedContainer(
+              margin: const EdgeInsets.all(5),
+              decoration: BoxDecoration(
+                  color: shape.backgroundColor.withOpacity(shape.opacity),
+                  borderRadius: BorderRadius.circular(shape.borderRadius),
+                  border: Border.all(
+                    width: shape.strokeWidth,
+                    color: shape.stroke.withOpacity(shape.opacity),
+                  )),
+              duration: const Duration(milliseconds: 100),
+              child: shape.child,
+            ),
           ),
         ),
       ),
@@ -614,7 +621,13 @@ class MainPageState extends State<MainPage> {
     return Positioned.fromRect(
       rect: Rect.fromPoints(pos, rB),
       child: MouseRegion(
-        cursor: SystemMouseCursors.click,
+        cursor: controller.cursor,
+        onHover: (event) {
+          if (controller.selectedContainerIndex == 3) {
+            controller.setMouseHover(event);
+            setState(() {});
+          }
+        },
         child: GestureDetector(
           onTapDown: (TapDownDetails details) {
             controller.manageTap(index, details.localPosition);
@@ -622,15 +635,23 @@ class MainPageState extends State<MainPage> {
           },
           child: Container(
             decoration: BoxDecoration(
-                color: shape.backgroundColor.withOpacity(shape.opacity),
-                borderRadius: BorderRadius.circular(shape.borderRadius),
-                border: Border.all(
-                  width: shape.strokeWidth,
+              border: Border.all(
                   color: controller.selectedShape == index
                       ? Colors.blue
-                      : shape.stroke.withOpacity(shape.opacity),
-                )),
-            child: shape.child,
+                      : Colors.transparent,
+                  width: 2),
+            ),
+            child: Container(
+              margin: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                  color: shape.backgroundColor.withOpacity(shape.opacity),
+                  borderRadius: BorderRadius.circular(shape.borderRadius),
+                  border: Border.all(
+                    width: shape.strokeWidth,
+                    color: shape.stroke.withOpacity(shape.opacity),
+                  )),
+              child: shape.child,
+            ),
           ),
         ),
       ),
@@ -660,31 +681,6 @@ class MainPageState extends State<MainPage> {
           ),
         ),
       ),
-    );
-  }
-
-  
-}
-
-class MyStrokeStyle extends StatelessWidget {
-  const MyStrokeStyle(
-      {super.key, required this.iconData, required this.isSelected});
-  final Widget iconData;
-  final bool isSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      width: 25,
-      height: 25,
-      decoration: BoxDecoration(
-          color: isSelected ? Colors.blue : null,
-          borderRadius: BorderRadius.circular(5),
-          border: Border.all(
-            color: isSelected ? Colors.transparent : Colors.transparent,
-          )),
-      duration: const Duration(milliseconds: 200),
-      child: iconData,
     );
   }
 }
