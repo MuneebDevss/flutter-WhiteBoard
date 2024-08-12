@@ -3,13 +3,17 @@ import 'package:white_board/Core/Constants/enum.dart';
 
 class Shapes {
   final int id;
+  FocusNode? node;
+  double rotationAngle;
   Color stroke;
   double strokeWidth;
   StrokeStyle strokeStyle;
   double opacity;
   Offset lT;
   Offset rB;
-  Shapes( {
+  Shapes({
+    this.node,
+    this.rotationAngle = 0,
     required this.id,
     this.stroke = Colors.black,
     this.strokeStyle = StrokeStyle.solid,

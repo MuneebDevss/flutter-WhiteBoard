@@ -1,6 +1,7 @@
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:white_board/Core/Constants/Color/color_palette.dart';
 import 'package:white_board/Core/Constants/Size/sizes.dart';
 import 'package:white_board/Core/Constants/enum.dart';
@@ -28,7 +29,7 @@ class MainPage extends StatefulWidget {
 
 class MainPageState extends State<MainPage> {
   final bool isWeb = kIsWeb;
-
+  // final bool isWindows = Platform.isWindows;
   late MainPageController controller;
   late SideBarController _sideBarController;
   Shapes? selectedShape;
@@ -135,8 +136,7 @@ class MainPageState extends State<MainPage> {
                           child: controller.selectedContainerIndex != 4
                               ? controller.selectedShape == -1
                                   ? shapesSideBar(screenWidth)
-                                  : controller.shapes[controller.selectedShape]
-                                          is TextFieldRect
+                                  : selectedShape is TextFieldRect
                                       ? TextFieldSideBar(
                                           controller: _sideBarController,
                                           screenWidth: screenWidth,
@@ -148,6 +148,7 @@ class MainPageState extends State<MainPage> {
                                 )),
                     //zoom
                     zoom(screenWidth, screenHeight),
+                    undoRedo(screenWidth, screenHeight),
                     //Undo Redo
                   ],
                 ),
@@ -225,7 +226,7 @@ class MainPageState extends State<MainPage> {
                 mouseCursor: SystemMouseCursors.grab,
                 activeColor: Colors.blue,
                 value: controller.selectedShape == -1
-                    ? SideBarController().strokeWidth
+                    ? _sideBarController.strokeWidth
                     : selectedShape!.strokeWidth,
                 onChanged: (val) {
                   if (controller.selectedShape != -1) {
@@ -310,13 +311,14 @@ class MainPageState extends State<MainPage> {
                   Shapes shape = selectedShape!;
                   if (shape is Circle) {
                     final MyStack stack = MyStack(
-                        id: shape.id, backgroundColor: shape.backgroundColor);
+                        id: shape.id, backgroundColor: shape.backgroundColor, shape: controller.getShapeType(selectedShape!));
                     controller.stack.add(stack);
                     (controller.shapes[controller.selectedShape] as Circle)
                         .backgroundColor = constantColor;
                   } else if (shape is Rectangle) {
                     final MyStack stack = MyStack(
-                        id: shape.id, backgroundColor: shape.backgroundColor);
+                      
+                        id: shape.id, backgroundColor: shape.backgroundColor,  shape: controller.getShapeType(selectedShape!));
                     controller.stack.add(stack);
                     (controller.shapes[controller.selectedShape] as Rectangle)
                         .backgroundColor = constantColor;
@@ -364,7 +366,7 @@ class MainPageState extends State<MainPage> {
                     final MyStack stack = MyStack(
                         id: selectedShape!.id,
                         backgroundColor:
-                            (selectedShape as Circle).backgroundColor);
+                            (selectedShape as Circle).backgroundColor, shape: controller.getShapeType(selectedShape!));
                     controller.stack.add(stack);
                     (controller.shapes[controller.selectedShape] as Circle)
                             .backgroundColor =
@@ -375,7 +377,7 @@ class MainPageState extends State<MainPage> {
                     final MyStack stack = MyStack(
                         id: selectedShape!.id,
                         backgroundColor:
-                            (selectedShape as Rectangle).backgroundColor);
+                            (selectedShape as Rectangle).backgroundColor, shape: controller.getShapeType(selectedShape!));
                     controller.stack.add(stack);
                     (controller.shapes[controller.selectedShape] as Rectangle)
                             .backgroundColor =
@@ -424,7 +426,7 @@ class MainPageState extends State<MainPage> {
               onTap: () {
                 if (controller.selectedShape != -1) {
                   final MyStack stack = MyStack(
-                      id: selectedShape!.id, stroke: selectedShape!.stroke);
+                      id: selectedShape!.id, stroke: selectedShape!.stroke, shape: controller.getShapeType(selectedShape!));
                   controller.stack.add(stack);
                   controller.shapes[controller.selectedShape].stroke =
                       constantColor;
@@ -460,7 +462,7 @@ class MainPageState extends State<MainPage> {
               onTap: () async {
                 if (selectedShape != null) {
                   final MyStack stack = MyStack(
-                      id: selectedShape!.id, stroke: selectedShape!.stroke);
+                      id: selectedShape!.id, stroke: selectedShape!.stroke, shape: controller.getShapeType(selectedShape!));
                   controller.stack.add(stack);
                   controller.shapes[controller.selectedShape].stroke =
                       await showColorPickerDialog(
@@ -544,9 +546,17 @@ class MainPageState extends State<MainPage> {
       Offset pos = shape.lT;
       Offset rB = shape.rB;
       if (shape is Rectangle) {
-        return buildRectangle(pos, rB, index, shape);
+        if (controller.selectedShape == index) {
+          return buildSelectedRectangle(pos, rB, index, shape);
+        } else {
+          return buildRectangle(pos, rB, index, shape);
+        }
       } else if (shape is Circle) {
-        return buildCircle(pos, rB, index, shape);
+        if (controller.selectedShape == index) {
+          return buildSelectedCircle(pos, rB, index, shape);
+        } else {
+          return buildCircle(pos, rB, index, shape);
+        }
       } else if (shape is TextFieldRect) {
         return buildTextField(pos, rB, index, shape);
       } else if (shape is Line) {
@@ -578,37 +588,29 @@ class MainPageState extends State<MainPage> {
   Positioned buildRectangle(Offset pos, Offset rB, int index, Rectangle shape) {
     return Positioned.fromRect(
       rect: Rect.fromPoints(pos, rB),
-      child: MouseRegion(
-        onHover: (event) {
-          if (controller.selectedContainerIndex == 3) {
-            controller.setMouseHover(event);
-            setState(() {});
-          }
+      child: GestureDetector(
+        onTapDown: (TapDownDetails details) {
+          controller.manageTap(index, details.localPosition);
+          setState(() {});
         },
-        cursor: controller.cursor,
-        child: GestureDetector(
-          onTapDown: (TapDownDetails details) {
-            controller.manageTap(index, details.localPosition);
-            setState(() {});
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(
-                  color: controller.selectedShape == index
-                      ? Colors.blue
-                      : Colors.transparent,
-                  width: 2),
-            ),
-            child: AnimatedContainer(
+        child: Transform(
+          alignment: Alignment.center,
+          transform: Matrix4.identity()..rotateZ(shape.rotationAngle),
+          child: MouseRegion(
+            onHover: (event) {
+              controller.setMouseHover(event);
+              setState(() {});
+            },
+            cursor: SystemMouseCursors.click,
+            child: Container(
               margin: const EdgeInsets.all(5),
               decoration: BoxDecoration(
-                  color: shape.backgroundColor.withOpacity(shape.opacity),
-                  borderRadius: BorderRadius.circular(shape.borderRadius),
-                  border: Border.all(
-                    width: shape.strokeWidth,
+                color: shape.backgroundColor,
+                border: Border.all(
                     color: shape.stroke.withOpacity(shape.opacity),
-                  )),
-              duration: const Duration(milliseconds: 100),
+                    width: shape.strokeWidth),
+                borderRadius: BorderRadius.circular(shape.borderRadius),
+              ),
               child: shape.child,
             ),
           ),
@@ -620,36 +622,29 @@ class MainPageState extends State<MainPage> {
   Positioned buildCircle(Offset pos, Offset rB, int index, Circle shape) {
     return Positioned.fromRect(
       rect: Rect.fromPoints(pos, rB),
-      child: MouseRegion(
-        cursor: controller.cursor,
-        onHover: (event) {
-          if (controller.selectedContainerIndex == 3) {
-            controller.setMouseHover(event);
-            setState(() {});
-          }
+      child: GestureDetector(
+        onTapDown: (TapDownDetails details) {
+          controller.manageTap(index, details.localPosition);
+          setState(() {});
         },
-        child: GestureDetector(
-          onTapDown: (TapDownDetails details) {
-            controller.manageTap(index, details.localPosition);
-            setState(() {});
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(
-                  color: controller.selectedShape == index
-                      ? Colors.blue
-                      : Colors.transparent,
-                  width: 2),
-            ),
+        child: Transform(
+          alignment: Alignment.center,
+          transform: Matrix4.identity()..rotateZ(shape.rotationAngle),
+          child: MouseRegion(
+            onHover: (event) {
+              controller.setMouseHover(event);
+              setState(() {});
+            },
+            cursor: SystemMouseCursors.click,
             child: Container(
-              margin: const EdgeInsets.all(2),
+              margin: const EdgeInsets.all(5),
               decoration: BoxDecoration(
-                  color: shape.backgroundColor.withOpacity(shape.opacity),
-                  borderRadius: BorderRadius.circular(shape.borderRadius),
-                  border: Border.all(
-                    width: shape.strokeWidth,
+                color: shape.backgroundColor,
+                border: Border.all(
                     color: shape.stroke.withOpacity(shape.opacity),
-                  )),
+                    width: shape.strokeWidth),
+                borderRadius: BorderRadius.circular(shape.borderRadius),
+              ),
               child: shape.child,
             ),
           ),
@@ -660,27 +655,194 @@ class MainPageState extends State<MainPage> {
 
   Positioned buildTextField(
       Offset pos, Offset rB, int index, TextFieldRect shape) {
+    if (controller.selectedShape == index) {
+      return Positioned(
+        left: pos.dx,
+        top: pos.dy,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTapDown: (TapDownDetails details) {
+              controller.manageTap(index, details.localPosition);
+              setState(() {});
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.blue, width: 2),
+              ),
+              child: Container(
+                margin: const EdgeInsets.all(5),
+                child: shape.child,
+              ),
+            ),
+          ),
+        ),
+      );
+    } else {
+      return Positioned(
+        left: pos.dx,
+        top: pos.dy,
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTapDown: (TapDownDetails details) {
+              controller.manageTap(index, details.localPosition);
+              setState(() {});
+            },
+            child: Container(
+              margin: const EdgeInsets.all(5),
+              child: shape.child,
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget buildSelectedRectangle(
+      Offset pos, Offset rB, int index, Rectangle shape) {
     return Positioned.fromRect(
       rect: Rect.fromPoints(pos, rB),
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: GestureDetector(
-          onTapDown: (TapDownDetails details) {
-            controller.manageTap(index, details.localPosition);
+      child: Transform(
+        alignment: Alignment.center,
+        transform: Matrix4.identity()..rotateZ(shape.rotationAngle),
+        child: MouseRegion(
+          onHover: (event) {
+            controller.setMouseHover(event);
             setState(() {});
           },
-          child: Container(
-            decoration: BoxDecoration(
-                border: Border.all(
-              color: controller.selectedContainerIndex == 8 ||
-                      controller.selectedContainerIndex == 3
-                  ? Colors.blue
-                  : Colors.transparent,
-            )),
-            child: shape.child,
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTapDown: (TapDownDetails details) {
+              controller.manageTap(index, details.localPosition);
+              setState(() {});
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.blue, width: 2),
+              ),
+              child: KeyboardListener(
+                focusNode: shape.node!,
+                onKeyEvent: (event) {
+                  if (event is KeyRepeatEvent) {
+                    controller.handleKeyholdEvents(event);
+                  } else if (event is KeyDownEvent) {
+                    controller.handleKeyEvents(event);
+                  } else if (event is KeyUpEvent) {
+                    controller.shiftPressed = false;
+                  }
+                  setState(() {});
+                },
+                child: Container(
+                  margin: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: shape.backgroundColor,
+                    border: Border.all(
+                        color: shape.stroke.withOpacity(shape.opacity),
+                        width: shape.strokeWidth),
+                    borderRadius: BorderRadius.circular(shape.borderRadius),
+                  ),
+                  child: shape.child,
+                ),
+              ),
+            ),
           ),
         ),
       ),
     );
+  }
+
+  Widget buildSelectedCircle(Offset pos, Offset rB, int index, Circle shape) {
+    return Positioned.fromRect(
+      rect: Rect.fromPoints(pos, rB),
+      child: Transform(
+        alignment: Alignment.center,
+        transform: Matrix4.identity()..rotateZ(shape.rotationAngle),
+        child: MouseRegion(
+          onHover: (event) {
+            controller.setMouseHover(event);
+            setState(() {});
+          },
+          cursor: SystemMouseCursors.click,
+          child: GestureDetector(
+            onTapDown: (TapDownDetails details) {
+              controller.manageTap(index, details.localPosition);
+              setState(() {});
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.blue, width: 2),
+              ),
+              child: KeyboardListener(
+                focusNode: shape.node!,
+                onKeyEvent: (event) {
+                  if (event is KeyRepeatEvent) {
+                    controller.handleKeyholdEvents(event);
+                  } else if (event is KeyDownEvent) {
+                    controller.handleKeyEvents(event);
+                  } else if (event is KeyUpEvent) {
+                    controller.shiftPressed = false;
+                  }
+                  setState(() {});
+                },
+                child: Container(
+                  margin: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: shape.backgroundColor,
+                    border: Border.all(
+                        color: shape.stroke.withOpacity(shape.opacity),
+                        width: shape.strokeWidth),
+                    borderRadius: BorderRadius.circular(shape.borderRadius),
+                  ),
+                  child: shape.child,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Positioned undoRedo(double screenWidth, double screenHeight) {
+    return Positioned(
+        left: screenWidth / 9 + 10,
+        bottom: 30,
+        child: Row(
+          children: [
+            InkWell(
+                onTap: () {
+                  controller.undo();
+                  setState(() {
+                    
+                  });
+                },
+                child: Container(
+                  width: screenWidth / 30,
+                  height: screenHeight / 20,
+                  decoration: const BoxDecoration(
+                      color: Color(0xFFECECF4),
+                      borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(10),
+                          bottomLeft: Radius.circular(10))),
+                  child: const Icon(Icons.undo),
+                )),
+            InkWell(
+                onTap: () {
+                  
+                  setState(() {});
+                },
+                child: Container(
+                  width: screenWidth / 30,
+                  height: screenHeight / 20,
+                  decoration: const BoxDecoration(
+                      color: Color(0xFFECECF4),
+                      borderRadius: BorderRadius.only(
+                          topRight: Radius.circular(10),
+                          bottomRight: Radius.circular(10))),
+                  child: const Icon(Icons.redo),
+                )),
+          ],
+        ));
   }
 }

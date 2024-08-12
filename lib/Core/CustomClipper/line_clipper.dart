@@ -89,6 +89,6 @@ class BrushClipper extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant BrushClipper oldDelegate) {
-    return oldDelegate.points != points;
+    return true;
   }
 }

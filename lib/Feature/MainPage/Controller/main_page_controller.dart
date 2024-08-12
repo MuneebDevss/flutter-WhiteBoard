@@ -1,12 +1,15 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
+
 import 'package:white_board/Core/Constants/enum.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/brush.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/circle.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/line.dart';
-import 'package:white_board/Core/Enitity/ShapeModels/rectangle.dart';
+import 'package:white_board/Core/Enitity/ShapeModels/rectangle.dart'
+    as rectangle;
 import 'package:white_board/Core/Enitity/ShapeModels/text_field_rect.dart';
 import 'package:white_board/Core/Enitity/my_stack.dart';
 import 'package:white_board/Core/HelpingFunctions/image_picker.dart';
@@ -60,9 +63,16 @@ class MainPageController {
     ),
   ];
 
+  bool shiftPressed = false;
+
   //Behaviors
 
   void manageTap(int index, Offset details) {
+    if (!shapes[index].node!.hasFocus) {
+      shapes[index].node!.requestFocus();
+    } else {
+      shapes[index].node!.unfocus();
+    }
     if (selectedContainerIndex == 8) //Eraser is selected
     {
       if (selectedShape == index) {
@@ -102,6 +112,11 @@ class MainPageController {
     final box = context.findRenderObject() as RenderBox;
     final details = box.globalToLocal(offsets.localPosition);
     int length = shapes.length;
+    int id = 0;
+    //so that id do not collide or overflow
+    if (shapes.isNotEmpty) {
+      id = shapes[length - 1].id + 1;
+    }
     // if (zoom > 1) {
     //   previousZoomPositiion = details;
     // }
@@ -135,14 +150,15 @@ class MainPageController {
         }
       }
     } else if (selectedContainerIndex == 0) {
-      Shapes shape = Rectangle(
+      Shapes shape = rectangle.Rectangle(
         lT: Offset(details.dx, details.dy),
         rB: Offset(details.dx, details.dy),
         stroke: controller.strokeColor,
         strokeStyle: controller.strokeStyle,
         strokeWidth: controller.strokeWidth,
         backgroundColor: controller.backgroundColor,
-        id: length,
+        id: id,
+        node: FocusNode(),
       );
       shapes.add(shape);
     } else if (selectedContainerIndex == 1) {
@@ -153,7 +169,8 @@ class MainPageController {
         strokeStyle: controller.strokeStyle,
         strokeWidth: controller.strokeWidth,
         backgroundColor: controller.backgroundColor,
-        id: length,
+        id: id,
+        node: FocusNode(),
       );
       shapes.add(shape);
     } else if (selectedContainerIndex == 2) {
@@ -163,7 +180,8 @@ class MainPageController {
         stroke: controller.strokeColor,
         strokeStyle: controller.strokeStyle,
         strokeWidth: controller.strokeWidth,
-        id: length,
+        id: id,
+        node: FocusNode(),
       );
       shapes.add(shape);
     } else if (selectedContainerIndex == 4) {
@@ -173,11 +191,15 @@ class MainPageController {
           stroke: Colors.transparent,
           strokeStyle: StrokeStyle.dashedBorder,
           child: MyTextfield(
-            style: const TextStyle(fontSize: 12, color: Colors.black),
+            style: const TextStyle(
+                fontSize: 12,
+                color: Colors.black,
+                overflow: TextOverflow.visible),
             fontSize: 12,
             node: FocusNode(),
           ),
-          id: length);
+          id: id,
+          node: FocusNode());
 
       shapes.add(shape);
     } else if (selectedContainerIndex == 5) {
@@ -186,12 +208,12 @@ class MainPageController {
         stroke: controller.strokeColor,
         strokeStyle: controller.strokeStyle,
         strokeWidth: controller.strokeWidth,
-        id: length,
+        id: id,
       );
       shapes.add(shape);
     } else if (selectedContainerIndex == 7) {
       if (image != null) {
-        Shapes shape = Rectangle(
+        Shapes shape = rectangle.Rectangle(
             lT: Offset(details.dx, details.dy),
             rB: Offset(details.dx, details.dy),
             stroke: controller.strokeColor,
@@ -202,7 +224,8 @@ class MainPageController {
               borderRadius: BorderRadius.circular(10),
               child: image,
             ),
-            id: length);
+            id: id,
+            node: FocusNode());
         shapes.add(shape);
       }
     }
@@ -214,6 +237,7 @@ class MainPageController {
         selectedContainerIndex != 3 &&
         selectedContainerIndex != -1) {
       selectedShape = shapes.length - 1;
+      shapes[selectedShape].node!.requestFocus();
     }
   }
 
@@ -228,7 +252,8 @@ class MainPageController {
     } else if (selectedContainerIndex == 2) {
       makeLine(position);
     } else if (selectedContainerIndex == 3) {
-      grab(Offset(position.dx, position.dy)); // Shapes resizing
+      handleShapeSizingAndGrabing(
+          Offset(position.dx, position.dy)); // Shapes resizing
     } else if (selectedContainerIndex == 5) {
       paint(position);
     } else if (selectedContainerIndex == 6) {
@@ -258,17 +283,17 @@ class MainPageController {
     shapes[length].rB = Offset(pos.dx, pos.dy);
   }
 
-  void grab(Offset position) {
+  void handleShapeSizingAndGrabing(Offset position) {
     if (selectedShape != -1) {
       Offset lT = shapes[selectedShape].lT;
       Offset rB = shapes[selectedShape].rB;
 
-      if (shapes[selectedShape] is Rectangle) {
+      if (shapes[selectedShape] is rectangle.Rectangle) {
         //tapped on bottom except corners
-        if (lT.dx < position.dx &&
-            position.dx < rB.dx &&
-            rB.dy - 10 < position.dy &&
-            rB.dy + 10 > position.dy) {
+        if (lT.dx < position.dx + shapes[selectedShape].rotationAngle &&
+            position.dx + shapes[selectedShape].rotationAngle < rB.dx &&
+            rB.dy - 10 < position.dy + shapes[selectedShape].rotationAngle &&
+            rB.dy + 10 > position.dy + shapes[selectedShape].rotationAngle) {
           shapes[selectedShape].rB =
               Offset(shapes[selectedShape].rB.dx, position.dy);
         }
@@ -376,7 +401,7 @@ class MainPageController {
           clickedPositioned = position;
         }
       } else if (shapes[selectedShape] is Line) {
-        final Offset mid=(lT+rB)/2;
+        final Offset mid = (lT + rB) / 2;
         //Clicked onstart position
         if (position.dx >= lT.dx - 10 &&
             position.dx <= lT.dx + 10 &&
@@ -458,7 +483,7 @@ class MainPageController {
   }
 
   void addToStack(Shapes shape) {
-    if (shape is Rectangle) {
+    if (shape is rectangle.Rectangle) {
       addRectToStack(shape);
     } else if (shape is Circle) {
       addCircleToStack(shape);
@@ -471,6 +496,7 @@ class MainPageController {
 
   void addLineToStack(Line shape) {
     return stack.add(MyStack(
+      shape: ShapeTypes.line,
       id: shape.id,
       lT: shape.lT,
       rB: shape.rB,
@@ -483,6 +509,7 @@ class MainPageController {
 
   void addTextFieldToStack(TextFieldRect shape) {
     return stack.add(MyStack(
+        shape: ShapeTypes.textField,
         id: shape.id,
         lT: shape.lT,
         rB: shape.rB,
@@ -493,8 +520,9 @@ class MainPageController {
         child: shape.child));
   }
 
-  void addRectToStack(Rectangle shape) {
+  void addRectToStack(rectangle.Rectangle shape) {
     return stack.add(MyStack(
+        shape: ShapeTypes.rectangle,
         id: shape.id,
         lT: shape.lT,
         rB: shape.rB,
@@ -509,6 +537,7 @@ class MainPageController {
 
   void addCircleToStack(Circle shape) {
     return stack.add(MyStack(
+        shape: ShapeTypes.circle,
         id: shape.id,
         lT: shape.lT,
         rB: shape.rB,
@@ -573,6 +602,308 @@ class MainPageController {
       else {
         cursor = SystemMouseCursors.grab;
       }
+    }
+  }
+
+  void handleKeyEvents(KeyDownEvent event) {
+    if (event.logicalKey == LogicalKeyboardKey.shiftRight ||
+        event.logicalKey == LogicalKeyboardKey.shiftLeft && !shiftPressed) {
+      shiftPressed = true;
+    } else if (shiftPressed &&
+        event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+      shapes[selectedShape].rotationAngle -= math.pi / 4;
+    } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+      shapes[selectedShape].rotationAngle -= math.pi / 36;
+    } else if (shiftPressed &&
+        event.logicalKey == LogicalKeyboardKey.arrowRight) {
+      shapes[selectedShape].rotationAngle += math.pi / 4;
+    } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+      shapes[selectedShape].rotationAngle += math.pi / 36;
+    }
+    //arrow up +shift
+    else if (shiftPressed && event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      shapes[selectedShape].rB =
+          Offset(shapes[selectedShape].rB.dx, shapes[selectedShape].rB.dy - 20);
+      shapes[selectedShape].lT =
+          Offset(shapes[selectedShape].lT.dx, shapes[selectedShape].lT.dy - 20);
+    }
+    //arrow up
+    else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      shapes[selectedShape].rB =
+          Offset(shapes[selectedShape].rB.dx, shapes[selectedShape].rB.dy - 5);
+      shapes[selectedShape].lT =
+          Offset(shapes[selectedShape].lT.dx, shapes[selectedShape].lT.dy - 5);
+    }
+    //arrow up + shift
+    else if (shiftPressed && event.logicalKey == LogicalKeyboardKey.arrowDown) {
+      shapes[selectedShape].rB =
+          Offset(shapes[selectedShape].rB.dx, shapes[selectedShape].rB.dy + 20);
+      shapes[selectedShape].lT =
+          Offset(shapes[selectedShape].lT.dx, shapes[selectedShape].lT.dy + 20);
+    }
+    //arrow down
+    else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+      shapes[selectedShape].rB =
+          Offset(shapes[selectedShape].rB.dx, shapes[selectedShape].rB.dy + 5);
+      shapes[selectedShape].lT =
+          Offset(shapes[selectedShape].lT.dx, shapes[selectedShape].lT.dy + 5);
+    }
+  }
+
+  void handleKeyholdEvents(KeyRepeatEvent event) {
+    if (shiftPressed && event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+      shapes[selectedShape].rotationAngle -= math.pi / 4;
+    } else if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+      shapes[selectedShape].rotationAngle -= math.pi / 36;
+    } else if (shiftPressed &&
+        event.logicalKey == LogicalKeyboardKey.arrowRight) {
+      shapes[selectedShape].rotationAngle += math.pi / 4;
+    } else if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+      shapes[selectedShape].rotationAngle += math.pi / 36;
+    }
+    //arrow up +shift
+    else if (shiftPressed && event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      shapes[selectedShape].rB =
+          Offset(shapes[selectedShape].rB.dx, shapes[selectedShape].rB.dy - 20);
+      shapes[selectedShape].lT =
+          Offset(shapes[selectedShape].lT.dx, shapes[selectedShape].lT.dy - 20);
+    }
+    //arrow up
+    else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+      shapes[selectedShape].rB =
+          Offset(shapes[selectedShape].rB.dx, shapes[selectedShape].rB.dy - 5);
+      shapes[selectedShape].lT =
+          Offset(shapes[selectedShape].lT.dx, shapes[selectedShape].lT.dy - 5);
+    }
+    //arrow up + shift
+    else if (shiftPressed && event.logicalKey == LogicalKeyboardKey.arrowDown) {
+      shapes[selectedShape].rB =
+          Offset(shapes[selectedShape].rB.dx, shapes[selectedShape].rB.dy + 20);
+      shapes[selectedShape].lT =
+          Offset(shapes[selectedShape].lT.dx, shapes[selectedShape].lT.dy + 20);
+    }
+    //arrow down
+    else if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+      shapes[selectedShape].rB =
+          Offset(shapes[selectedShape].rB.dx, shapes[selectedShape].rB.dy + 5);
+      shapes[selectedShape].lT =
+          Offset(shapes[selectedShape].lT.dx, shapes[selectedShape].lT.dy + 5);
+    }
+  }
+
+  void undo() {
+    if (stack.isEmpty) return;
+    int stackLength = stack.length - 1;
+    int shapesLength = shapes.length - 1;
+    int id = stack[stackLength].id;
+    //made changes in new made shape
+    if (shapes[shapesLength].id == id) {
+      if (shapes[shapesLength] is Circle) {
+        shapes[shapesLength] = undoCircle(shapesLength, stackLength);
+      }
+      //undo Rectangle
+      else if (shapes[shapesLength] is rectangle.Rectangle) {
+        shapes[shapesLength] = undoRectangle(shapesLength, stackLength);
+      } else if (shapes[shapesLength] is Brush) {
+        shapes[shapesLength] = undorBrush(shapesLength, stackLength);
+      } else if (shapes[shapesLength] is TextFieldRect) {
+        shapes[shapesLength] = undoTextField(shapesLength, stackLength);
+      } else if (shapes[shapesLength] is Line) {
+        shapes[shapesLength] = undoLine(shapesLength, stackLength);
+      }
+    } else {
+      //made changes at random
+      for (int x = 0; x <= shapesLength; x++) {
+        if (shapes[x].id == id) {
+          if (shapes[shapesLength] is Circle) {
+            shapes[shapesLength] = undoCircle(shapesLength, stackLength);
+          }
+          //undo Rectangle
+          else if (shapes[shapesLength] is rectangle.Rectangle) {
+            shapes[shapesLength] = undoRectangle(shapesLength, stackLength);
+          } else if (shapes[shapesLength] is Brush) {
+            shapes[shapesLength] = undorBrush(shapesLength, stackLength);
+          } else if (shapes[shapesLength] is TextFieldRect) {
+            shapes[shapesLength] = undoTextField(shapesLength, stackLength);
+          } else if (shapes[shapesLength] is Line) {
+            shapes[shapesLength] = undoLine(shapesLength, stackLength);
+          }
+          stack.removeLast();
+          return;
+        }
+      }
+      //shape is deleted
+      if (stack[stackLength].shape == ShapeTypes.rectangle) {
+        undoDeletedRectangle(stackLength);
+      } else if (stack[stackLength].shape == ShapeTypes.line) {
+        undoDeletedLine(stackLength);
+      } else if (stack[stackLength].shape == ShapeTypes.brush) {
+        undoDeletedBrush(stackLength);
+      } else if (stack[stackLength].shape == ShapeTypes.textField) {
+        undoDeletedTextField(stackLength);
+      } else if (stack[stackLength].shape == ShapeTypes.circle) {
+        undoDeletedCircle(stackLength);
+      }
+    }
+    stack.removeLast();
+  }
+
+  void undoDeletedCircle(int stackLength) {
+    return shapes.add(Circle(
+      lT: stack[stackLength].lT!,
+      rB: stack[stackLength].rB!,
+      stroke: stack[stackLength].stroke!,
+      strokeStyle: stack[stackLength].strokeStyle!,
+      strokeWidth: stack[stackLength].strokeWidth!,
+      backgroundColor: stack[stackLength].backgroundColor!,
+      id: stack[stackLength].id,
+      node: stack[stackLength].node,
+      rotationAngle: stack[stackLength].rotationAngle!,
+      borderRadius: stack[stackLength].borderRadius!,
+      child: stack[stackLength].child,
+      opacity: stack[stackLength].opacity!,
+    ));
+  }
+
+  void undoDeletedTextField(int stackLength) {
+    return shapes.add(TextFieldRect(
+      lT: stack[stackLength].lT!,
+      rB: stack[stackLength].rB!,
+      stroke: stack[stackLength].stroke!,
+      strokeStyle: stack[stackLength].strokeStyle!,
+      strokeWidth: stack[stackLength].strokeWidth!,
+      id: stack[stackLength].id,
+      node: stack[stackLength].node,
+      rotationAngle: stack[stackLength].rotationAngle!,
+      child: stack[stackLength].child,
+      opacity: stack[stackLength].opacity!,
+    ));
+  }
+
+  void undoDeletedBrush(int stackLength) {
+    return shapes.add(Brush(
+      stroke: stack[stackLength].stroke!,
+      strokeStyle: stack[stackLength].strokeStyle!,
+      strokeWidth: stack[stackLength].strokeWidth!,
+      id: stack[stackLength].id,
+      opacity: stack[stackLength].opacity!,
+      points: stack[stackLength].points!,
+    ));
+  }
+
+  void undoDeletedLine(int stackLength) {
+    return shapes.add(Line(
+      lT: stack[stackLength].lT!,
+      rB: stack[stackLength].rB!,
+      stroke: stack[stackLength].stroke!,
+      strokeStyle: stack[stackLength].strokeStyle!,
+      strokeWidth: stack[stackLength].strokeWidth!,
+      id: stack[stackLength].id,
+      node: stack[stackLength].node,
+      rotationAngle: stack[stackLength].rotationAngle!,
+      opacity: stack[stackLength].opacity!,
+    ));
+  }
+
+  void undoDeletedRectangle(int stackLength) {
+    return shapes.add(rectangle.Rectangle(
+      lT: stack[stackLength].lT!,
+      rB: stack[stackLength].rB!,
+      stroke: stack[stackLength].stroke!,
+      strokeStyle: stack[stackLength].strokeStyle!,
+      strokeWidth: stack[stackLength].strokeWidth!,
+      backgroundColor: stack[stackLength].backgroundColor!,
+      id: stack[stackLength].id,
+      node: stack[stackLength].node,
+      rotationAngle: stack[stackLength].rotationAngle!,
+      borderRadius: stack[stackLength].borderRadius!,
+      child: stack[stackLength].child,
+      opacity: stack[stackLength].opacity!,
+    ));
+  }
+
+  Line undoLine(int shapesLength, int stackLength) {
+    return (shapes[shapesLength] as Line).copyWith(
+      stroke: stack[stackLength].stroke,
+      strokeStyle: stack[stackLength].strokeStyle,
+      strokeWidth: stack[stackLength].strokeWidth,
+      lT: stack[stackLength].lT,
+      rB: stack[stackLength].rB,
+      rotationAngle: stack[stackLength].rotationAngle,
+      node: stack[stackLength].node,
+      opacity: stack[stackLength].opacity,
+    );
+  }
+
+  TextFieldRect undoTextField(int shapesLength, int stackLength) {
+    return (shapes[shapesLength] as TextFieldRect).copyWith(
+      child: (stack[stackLength] as TextFieldRect).child,
+      stroke: stack[stackLength].stroke,
+      strokeStyle: stack[stackLength].strokeStyle,
+      strokeWidth: stack[stackLength].strokeWidth,
+      lT: stack[stackLength].lT,
+      rB: stack[stackLength].rB,
+      rotationAngle: stack[stackLength].rotationAngle,
+      node: stack[stackLength].node,
+      opacity: stack[stackLength].opacity,
+    );
+  }
+
+  Brush undorBrush(int shapesLength, int stackLength) {
+    return (shapes[shapesLength] as Brush).copyWith(
+      stroke: stack[stackLength].stroke,
+      strokeStyle: stack[stackLength].strokeStyle,
+      strokeWidth: stack[stackLength].strokeWidth,
+      opacity: stack[stackLength].opacity,
+      points: stack[stackLength].points,
+    );
+  }
+
+  rectangle.Rectangle undoRectangle(int shapesLength, int stackLength) {
+    MyStack temporaryStack = stack[stackLength];
+
+    return (shapes[shapesLength] as rectangle.Rectangle).copyWith(
+      backgroundColor: (temporaryStack).backgroundColor,
+      child: (temporaryStack).child,
+      stroke: temporaryStack.stroke,
+      strokeStyle: temporaryStack.strokeStyle,
+      strokeWidth: temporaryStack.strokeWidth,
+      lT: temporaryStack.lT,
+      rB: temporaryStack.rB,
+      rotationAngle: temporaryStack.rotationAngle,
+      node: temporaryStack.node,
+      opacity: temporaryStack.opacity,
+      borderRadius: temporaryStack.borderRadius,
+    );
+  }
+
+  Circle undoCircle(int shapesLength, int stackLength) {
+    return (shapes[shapesLength] as Circle).copyWith(
+      backgroundColor: (stack[stackLength] as Circle).backgroundColor,
+      child: (stack[stackLength] as Circle).child,
+      stroke: stack[stackLength].stroke,
+      strokeStyle: stack[stackLength].strokeStyle,
+      strokeWidth: stack[stackLength].strokeWidth,
+      lT: stack[stackLength].lT,
+      rB: stack[stackLength].rB,
+      rotationAngle: stack[stackLength].rotationAngle,
+      node: stack[stackLength].node,
+      opacity: stack[stackLength].opacity,
+      borderRadius: stack[stackLength].borderRadius,
+    );
+  }
+
+  ShapeTypes getShapeType(Shapes shapes) {
+    if (shapes is rectangle.Rectangle) {
+      return ShapeTypes.rectangle;
+    } else if (shapes is Line) {
+      return ShapeTypes.line;
+    } else if (shapes is TextFieldRect) {
+      return ShapeTypes.textField;
+    } else if (shapes is Circle) {
+      return ShapeTypes.circle;
+    } else {
+      return ShapeTypes.brush;
     }
   }
 }
