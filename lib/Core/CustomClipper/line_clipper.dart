@@ -1,13 +1,18 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:white_board/Core/HelpingFunctions/dash_path.dart';
 
 class LinePainter extends CustomPainter {
-  final Offset startPosition;
+  Offset startPosition;
   final Offset endPosition;
   final Color stroke;
-  final double strokeWidth,opacity;
+  final double strokeWidth, opacity;
   final bool isGrabAble;
+  final bool isDashed;
   LinePainter(
       {required this.stroke,
+      required this.isDashed,
       required this.strokeWidth,
       required this.isGrabAble,
       required this.startPosition,
@@ -18,9 +23,24 @@ class LinePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = stroke.withOpacity(opacity)
-      ..strokeWidth = strokeWidth;
+      ..strokeWidth = strokeWidth..style=PaintingStyle.stroke;
 
-    canvas.drawLine(startPosition, endPosition, paint);
+    if (!isDashed) {
+      canvas.drawLine(startPosition, endPosition, paint);
+    } else {
+      final Path path = Path();
+      path.moveTo(startPosition.dx, startPosition.dy);
+      path.lineTo(endPosition.dx, endPosition.dy);
+      PathMetrics matrices = path.computeMetrics();
+      double distance = matrices.first.length;
+      final newPath = dashPath(path,
+          dashArray: CircularIntervalList(
+      
+      [distance / 10, distance / 10]));
+      
+
+      canvas.drawPath(newPath, paint);
+    }
     if (isGrabAble) {
       Offset midpoint = (startPosition + endPosition) / 2;
       Offset midpoint2 = (startPosition);
@@ -42,7 +62,7 @@ class LinePainter extends CustomPainter {
 
 class BrushClipper extends CustomPainter {
   final List<Offset> points;
-  final double strokeWidth,opacity;
+  final double strokeWidth, opacity;
   final Color stroke;
 
   BrushClipper({

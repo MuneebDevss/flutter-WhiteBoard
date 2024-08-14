@@ -1,3 +1,4 @@
+import 'package:dotted_border/dotted_border.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -585,14 +586,14 @@ class MainPageState extends State<MainPage> {
         return buildTextField(pos, rB, index, shape);
       } else if (shape is Line) {
         return CustomPaint(
-          size: const Size(20, 20),
+          
           painter: LinePainter(
               endPosition: rB,
               startPosition: pos,
               stroke: shape.stroke,
               strokeWidth: shape.strokeWidth,
               isGrabAble: controller.selectedShape == index,
-              opacity: shape.opacity),
+              opacity: shape.opacity, isDashed: shape.strokeStyle==StrokeStyle.dashedBorder),
         );
       } else if (shape is Brush) {
         return CustomPaint(
@@ -625,20 +626,36 @@ class MainPageState extends State<MainPage> {
               setState(() {});
             },
             cursor: SystemMouseCursors.click,
-            child: Container(
-              margin: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                color: shape.backgroundColor.withOpacity(
-                    shape.backgroundColor == Colors.transparent
-                        ? 0
-                        : shape.opacity),
-                border: Border.all(
-                    color: shape.stroke.withOpacity(shape.opacity),
-                    width: shape.strokeWidth),
-                borderRadius: BorderRadius.circular(shape.borderRadius),
-              ),
-              child: shape.child,
-            ),
+            child: shape.strokeStyle==StrokeStyle.solid? Container(
+                  
+                  decoration: BoxDecoration(
+                    color: shape.backgroundColor.withOpacity(
+                        shape.backgroundColor == Colors.transparent
+                            ? 0
+                            : shape.opacity),
+                    border: Border.all(
+                        color: shape.stroke.withOpacity(shape.opacity),
+                        width: shape.strokeWidth),
+                    borderRadius: BorderRadius.circular(shape.borderRadius),
+                  ),
+                  child: shape.child,
+                ):DottedBorder(
+                  color: shape.stroke.withOpacity(shape.opacity),
+                  strokeWidth: shape.strokeWidth,
+                  dashPattern: const [8, 4],
+                  radius: Radius.circular(shape.borderRadius),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: shape.backgroundColor.withOpacity(
+                          shape.backgroundColor == Colors.transparent
+                              ? 0
+                              : shape.opacity),
+                      
+                      borderRadius: BorderRadius.circular(shape.borderRadius),
+                    ),
+                    child: shape.child,
+                  ),
+                ),
           ),
         ),
       ),
@@ -662,20 +679,40 @@ class MainPageState extends State<MainPage> {
               setState(() {});
             },
             cursor: SystemMouseCursors.click,
-            child: Container(
-              margin: const EdgeInsets.all(5),
-              decoration: BoxDecoration(
-                color: shape.backgroundColor.withOpacity(
-                    shape.backgroundColor == Colors.transparent
-                        ? 0
-                        : shape.opacity),
-                border: Border.all(
-                    color: shape.stroke.withOpacity(shape.opacity),
-                    width: shape.strokeWidth),
-                borderRadius: BorderRadius.circular(shape.borderRadius),
-              ),
-              child: shape.child,
-            ),
+            child: shape.strokeStyle==StrokeStyle.solid? Container(
+                  
+                  decoration: BoxDecoration(
+                    color: shape.backgroundColor.withOpacity(
+                        shape.backgroundColor == Colors.transparent
+                            ? 0
+                            : shape.opacity),
+                    border: Border.all(
+                        color: shape.stroke.withOpacity(shape.opacity),
+                        width: shape.strokeWidth),
+                    borderRadius: BorderRadius.circular(shape.borderRadius),
+                  ),
+                  child: shape.child,
+                ):DottedBorder(
+                  color: shape.stroke.withOpacity(shape.opacity),
+                  strokeWidth: shape.strokeWidth,
+                    radius: Radius.circular(shape.borderRadius),
+                  dashPattern: const [8, 4],
+                  borderType: BorderType.RRect,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(shape.borderRadius),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: shape.backgroundColor.withOpacity(
+                            shape.backgroundColor == Colors.transparent
+                                ? 0
+                                : shape.opacity),
+                        
+                        borderRadius: BorderRadius.circular(shape.borderRadius),
+                      ),
+                      child: shape.child,
+                    ),
+                  ),
+                ),
           ),
         ),
       ),
@@ -746,10 +783,11 @@ class MainPageState extends State<MainPage> {
               controller.manageTap(index, details.localPosition);
               setState(() {});
             },
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.blue, width: 2),
-              ),
+            child: DottedBorder(
+              padding: const EdgeInsets.all(10),
+              color: Colors.blue,
+              strokeWidth: 2,
+              dashPattern: const [8, 4],
               child: KeyboardListener(
                 focusNode: shape.node!,
                 onKeyEvent: (event) {
@@ -762,8 +800,8 @@ class MainPageState extends State<MainPage> {
                   }
                   setState(() {});
                 },
-                child: Container(
-                  margin: const EdgeInsets.all(5),
+                child: shape.strokeStyle==StrokeStyle.solid? Container(
+                  
                   decoration: BoxDecoration(
                     color: shape.backgroundColor.withOpacity(
                         shape.backgroundColor == Colors.transparent
@@ -775,6 +813,22 @@ class MainPageState extends State<MainPage> {
                     borderRadius: BorderRadius.circular(shape.borderRadius),
                   ),
                   child: shape.child,
+                ):DottedBorder(
+                  color: shape.stroke.withOpacity(shape.opacity),
+                  strokeWidth: shape.strokeWidth,
+                  dashPattern: const [8, 4],
+                  radius: Radius.circular(shape.borderRadius),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: shape.backgroundColor.withOpacity(
+                          shape.backgroundColor == Colors.transparent
+                              ? 0
+                              : shape.opacity),
+                      
+                      borderRadius: BorderRadius.circular(shape.borderRadius),
+                    ),
+                    child: shape.child,
+                  ),
                 ),
               ),
             ),
@@ -801,10 +855,11 @@ class MainPageState extends State<MainPage> {
               controller.manageTap(index, details.localPosition);
               setState(() {});
             },
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.blue, width: 2),
-              ),
+            child: DottedBorder(
+              padding: const EdgeInsets.all(10),
+              color: Colors.blue,
+              strokeWidth: 2,
+              dashPattern: const [8, 4],
               child: KeyboardListener(
                 focusNode: shape.node!,
                 onKeyEvent: (event) {
@@ -817,8 +872,8 @@ class MainPageState extends State<MainPage> {
                   }
                   setState(() {});
                 },
-                child: Container(
-                  margin: const EdgeInsets.all(5),
+                child: shape.strokeStyle==StrokeStyle.solid? Container(
+                  
                   decoration: BoxDecoration(
                     color: shape.backgroundColor.withOpacity(
                         shape.backgroundColor == Colors.transparent
@@ -830,6 +885,26 @@ class MainPageState extends State<MainPage> {
                     borderRadius: BorderRadius.circular(shape.borderRadius),
                   ),
                   child: shape.child,
+                ):DottedBorder(
+                  color: shape.stroke.withOpacity(shape.opacity),
+                  strokeWidth: shape.strokeWidth,
+                    radius: Radius.circular(shape.borderRadius),
+                  dashPattern: const [8, 4],
+                  borderType: BorderType.RRect,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(shape.borderRadius),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: shape.backgroundColor.withOpacity(
+                            shape.backgroundColor == Colors.transparent
+                                ? 0
+                                : shape.opacity),
+                        
+                        borderRadius: BorderRadius.circular(shape.borderRadius),
+                      ),
+                      child: shape.child,
+                    ),
+                  ),
                 ),
               ),
             ),

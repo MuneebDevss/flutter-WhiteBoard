@@ -29,7 +29,7 @@ class SideBarController {
     this.alignment = TextAlignment.center,
     this.backgroundColor = Colors.transparent,
     this.strokeColor = Colors.black,
-    this.strokeWidth = 4.0,
+    this.strokeWidth = 2.0,
     this.strokeStyle = StrokeStyle.solid,
     this.opacity = 1,
   });
