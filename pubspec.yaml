@@ -40,6 +40,10 @@ dependencies:
   connectivity_plus: ^6.0.4
   url_launcher: ^6.3.0
   iconsax: ^0.0.8
+  flex_color_picker: ^3.5.1
+  universal_html: ^2.2.4
+  zoom_widget: ^2.0.1
+  dotted_border: ^2.1.0
 
 dev_dependencies:
   flutter_test:

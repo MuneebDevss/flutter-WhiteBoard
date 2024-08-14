@@ -2,25 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:white_board/Core/Constants/enum.dart';
 import 'package:white_board/Core/Enitity/shape.dart';
 
-class Circle extends Shapes {
-  Color backgroundColor;
-  double borderRadius;
+class TextFieldRect extends Shapes {
   Widget? child;
-  Circle(
-      {super.rotationAngle,
-      this.child,
+
+  TextFieldRect(
+      {super.strokeWidth = 4,
       super.stroke,
-      this.borderRadius = 50,
-      super.strokeWidth = 4,
       super.opacity,
       super.strokeStyle,
+      this.child,
       super.lT,
-      this.backgroundColor = Colors.transparent,
       super.rB,
-      required super.id, required super.node});
-      Circle copyWith({
-    Color? backgroundColor,
-    double? borderRadius,
+      required super.id,
+      super.rotationAngle,
+      required super.node});
+  TextFieldRect copyWith({
     Widget? child,
     double? strokeWidth,
     Color? stroke,
@@ -32,9 +28,7 @@ class Circle extends Shapes {
     double? rotationAngle,
     FocusNode? node,
   }) {
-    return Circle(
-      backgroundColor: backgroundColor ?? this.backgroundColor,
-      borderRadius: borderRadius ?? this.borderRadius,
+    return TextFieldRect(
       child: child ?? this.child,
       strokeWidth: strokeWidth ?? this.strokeWidth,
       stroke: stroke ?? this.stroke,

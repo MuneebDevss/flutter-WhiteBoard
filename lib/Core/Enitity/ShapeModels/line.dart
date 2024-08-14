@@ -1,27 +1,20 @@
+
 import 'package:flutter/material.dart';
 import 'package:white_board/Core/Constants/enum.dart';
 import 'package:white_board/Core/Enitity/shape.dart';
 
-class Circle extends Shapes {
-  Color backgroundColor;
-  double borderRadius;
-  Widget? child;
-  Circle(
-      {super.rotationAngle,
-      this.child,
-      super.stroke,
-      this.borderRadius = 50,
-      super.strokeWidth = 4,
-      super.opacity,
-      super.strokeStyle,
-      super.lT,
-      this.backgroundColor = Colors.transparent,
-      super.rB,
-      required super.id, required super.node});
-      Circle copyWith({
-    Color? backgroundColor,
-    double? borderRadius,
-    Widget? child,
+class Line extends Shapes {
+  Line({
+    super.strokeWidth = 4,
+    super.stroke,
+    super.opacity,
+    super.strokeStyle,
+    super.lT,
+    super.rB,
+    required super.id,
+    super.rotationAngle, required super.node,
+  });
+  Line copyWith({
     double? strokeWidth,
     Color? stroke,
     double? opacity,
@@ -32,10 +25,7 @@ class Circle extends Shapes {
     double? rotationAngle,
     FocusNode? node,
   }) {
-    return Circle(
-      backgroundColor: backgroundColor ?? this.backgroundColor,
-      borderRadius: borderRadius ?? this.borderRadius,
-      child: child ?? this.child,
+    return Line(
       strokeWidth: strokeWidth ?? this.strokeWidth,
       stroke: stroke ?? this.stroke,
       opacity: opacity ?? this.opacity,

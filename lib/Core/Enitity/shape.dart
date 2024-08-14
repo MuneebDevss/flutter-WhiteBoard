@@ -1,26 +1,25 @@
-  
-
 import 'package:flutter/material.dart';
+import 'package:white_board/Core/Constants/enum.dart';
 
 class Shapes {
-  double mirrorX;
-  double mirrorY;
-  double height;
-  double width;
-  double stroke;
-  Color? backgroundColor;
-  double? borderRadius;
-  Widget? child;
-  Offset position;
+  final int id;
+  FocusNode? node;
+  double rotationAngle;
+  Color stroke;
+  double strokeWidth;
+  StrokeStyle strokeStyle;
+  double opacity;
+  Offset lT;
+  Offset rB;
   Shapes({
-    this.mirrorX=0,
-    this.mirrorY=0,
-    this.height = 12,
-    this.width = 15,
-    this.stroke = 5,
-    this.position = const Offset(10.0, 10.0),
-    String? backgroundColor,
-    double? borderRadius,
-    Widget? child,
+    this.node,
+    this.rotationAngle = 0,
+    required this.id,
+    this.stroke = Colors.black,
+    this.strokeStyle = StrokeStyle.solid,
+    this.strokeWidth = 2,
+    this.opacity = 1,
+    this.lT = const Offset(10.0, 10.0),
+    this.rB = const Offset(10.0, 10.0),
   });
 }
