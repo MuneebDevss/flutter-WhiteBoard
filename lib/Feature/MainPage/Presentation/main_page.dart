@@ -2,6 +2,7 @@ import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:iconsax/iconsax.dart';
 import 'package:white_board/Core/Constants/Color/color_palette.dart';
 import 'package:white_board/Core/Constants/Size/sizes.dart';
 import 'package:white_board/Core/Constants/enum.dart';
@@ -116,6 +117,11 @@ class MainPageState extends State<MainPage> {
                       },
                       onPanUpdate: (event) {
                         controller.storePointerUpdatePosition(event);
+                        setState(() {});
+                      },
+                      onPanEnd: (DragEndDetails det) {
+                        //Brush selected
+                        controller.managePanEnd(det);
                         setState(() {});
                       },
                       child: Container(
@@ -253,11 +259,16 @@ class MainPageState extends State<MainPage> {
                 GestureDetector(
                     onTap: () {
                       if (controller.selectedShape != -1) {
+                        controller.stack.add(MyStack(
+                          strokeStyle: StrokeStyle.solid,
+                            shape: controller.getShapeType(selectedShape!),
+                            id: selectedShape!.id));
                         controller.shapes[controller.selectedShape]
                             .strokeStyle = StrokeStyle.solid;
                       } else {
                         _sideBarController.strokeStyle = StrokeStyle.solid;
                       }
+
                       setState(() {});
                     },
                     child: MyStrokeStyle(
@@ -269,6 +280,10 @@ class MainPageState extends State<MainPage> {
                 GestureDetector(
                     onTap: () {
                       if (controller.selectedShape != -1) {
+                        controller.stack.add(MyStack(
+                          strokeStyle: StrokeStyle.dashedBorder,
+                            shape: controller.getShapeType(selectedShape!),
+                            id: selectedShape!.id));
                         controller.shapes[controller.selectedShape]
                             .strokeStyle = StrokeStyle.dashedBorder;
                       } else {
@@ -311,14 +326,17 @@ class MainPageState extends State<MainPage> {
                   Shapes shape = selectedShape!;
                   if (shape is Circle) {
                     final MyStack stack = MyStack(
-                        id: shape.id, backgroundColor: shape.backgroundColor, shape: controller.getShapeType(selectedShape!));
+                        id: shape.id,
+                        backgroundColor: shape.backgroundColor,
+                        shape: ShapeTypes.circle);
                     controller.stack.add(stack);
                     (controller.shapes[controller.selectedShape] as Circle)
                         .backgroundColor = constantColor;
                   } else if (shape is Rectangle) {
                     final MyStack stack = MyStack(
-                      
-                        id: shape.id, backgroundColor: shape.backgroundColor,  shape: controller.getShapeType(selectedShape!));
+                        id: shape.id,
+                        backgroundColor: shape.backgroundColor,
+                        shape: ShapeTypes.rectangle);
                     controller.stack.add(stack);
                     (controller.shapes[controller.selectedShape] as Rectangle)
                         .backgroundColor = constantColor;
@@ -366,7 +384,8 @@ class MainPageState extends State<MainPage> {
                     final MyStack stack = MyStack(
                         id: selectedShape!.id,
                         backgroundColor:
-                            (selectedShape as Circle).backgroundColor, shape: controller.getShapeType(selectedShape!));
+                            (selectedShape as Circle).backgroundColor,
+                        shape: controller.getShapeType(selectedShape!));
                     controller.stack.add(stack);
                     (controller.shapes[controller.selectedShape] as Circle)
                             .backgroundColor =
@@ -377,7 +396,8 @@ class MainPageState extends State<MainPage> {
                     final MyStack stack = MyStack(
                         id: selectedShape!.id,
                         backgroundColor:
-                            (selectedShape as Rectangle).backgroundColor, shape: controller.getShapeType(selectedShape!));
+                            (selectedShape as Rectangle).backgroundColor,
+                        shape: controller.getShapeType(selectedShape!));
                     controller.stack.add(stack);
                     (controller.shapes[controller.selectedShape] as Rectangle)
                             .backgroundColor =
@@ -426,7 +446,9 @@ class MainPageState extends State<MainPage> {
               onTap: () {
                 if (controller.selectedShape != -1) {
                   final MyStack stack = MyStack(
-                      id: selectedShape!.id, stroke: selectedShape!.stroke, shape: controller.getShapeType(selectedShape!));
+                      id: selectedShape!.id,
+                      stroke: selectedShape!.stroke,
+                      shape: controller.getShapeType(selectedShape!));
                   controller.stack.add(stack);
                   controller.shapes[controller.selectedShape].stroke =
                       constantColor;
@@ -462,7 +484,9 @@ class MainPageState extends State<MainPage> {
               onTap: () async {
                 if (selectedShape != null) {
                   final MyStack stack = MyStack(
-                      id: selectedShape!.id, stroke: selectedShape!.stroke, shape: controller.getShapeType(selectedShape!));
+                      id: selectedShape!.id,
+                      stroke: selectedShape!.stroke,
+                      shape: controller.getShapeType(selectedShape!));
                   controller.stack.add(stack);
                   controller.shapes[controller.selectedShape].stroke =
                       await showColorPickerDialog(
@@ -567,8 +591,7 @@ class MainPageState extends State<MainPage> {
               startPosition: pos,
               stroke: shape.stroke,
               strokeWidth: shape.strokeWidth,
-              isGrabAble: controller.selectedContainerIndex == 3 ||
-                  controller.selectedContainerIndex == 8,
+              isGrabAble: controller.selectedShape == index,
               opacity: shape.opacity),
         );
       } else if (shape is Brush) {
@@ -605,7 +628,10 @@ class MainPageState extends State<MainPage> {
             child: Container(
               margin: const EdgeInsets.all(5),
               decoration: BoxDecoration(
-                color: shape.backgroundColor,
+                color: shape.backgroundColor.withOpacity(
+                    shape.backgroundColor == Colors.transparent
+                        ? 0
+                        : shape.opacity),
                 border: Border.all(
                     color: shape.stroke.withOpacity(shape.opacity),
                     width: shape.strokeWidth),
@@ -639,7 +665,10 @@ class MainPageState extends State<MainPage> {
             child: Container(
               margin: const EdgeInsets.all(5),
               decoration: BoxDecoration(
-                color: shape.backgroundColor,
+                color: shape.backgroundColor.withOpacity(
+                    shape.backgroundColor == Colors.transparent
+                        ? 0
+                        : shape.opacity),
                 border: Border.all(
                     color: shape.stroke.withOpacity(shape.opacity),
                     width: shape.strokeWidth),
@@ -736,7 +765,10 @@ class MainPageState extends State<MainPage> {
                 child: Container(
                   margin: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
-                    color: shape.backgroundColor,
+                    color: shape.backgroundColor.withOpacity(
+                        shape.backgroundColor == Colors.transparent
+                            ? 0
+                            : shape.opacity),
                     border: Border.all(
                         color: shape.stroke.withOpacity(shape.opacity),
                         width: shape.strokeWidth),
@@ -788,7 +820,10 @@ class MainPageState extends State<MainPage> {
                 child: Container(
                   margin: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
-                    color: shape.backgroundColor,
+                    color: shape.backgroundColor.withOpacity(
+                        shape.backgroundColor == Colors.transparent
+                            ? 0
+                            : shape.opacity),
                     border: Border.all(
                         color: shape.stroke.withOpacity(shape.opacity),
                         width: shape.strokeWidth),
@@ -813,9 +848,7 @@ class MainPageState extends State<MainPage> {
             InkWell(
                 onTap: () {
                   controller.undo();
-                  setState(() {
-                    
-                  });
+                  setState(() {});
                 },
                 child: Container(
                   width: screenWidth / 30,
@@ -825,11 +858,11 @@ class MainPageState extends State<MainPage> {
                       borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(10),
                           bottomLeft: Radius.circular(10))),
-                  child: const Icon(Icons.undo),
+                  child: const Icon(Iconsax.undo),
                 )),
             InkWell(
                 onTap: () {
-                  
+                  controller.redo();
                   setState(() {});
                 },
                 child: Container(
@@ -840,7 +873,7 @@ class MainPageState extends State<MainPage> {
                       borderRadius: BorderRadius.only(
                           topRight: Radius.circular(10),
                           bottomRight: Radius.circular(10))),
-                  child: const Icon(Icons.redo),
+                  child: const Icon(Iconsax.redo),
                 )),
           ],
         ));
