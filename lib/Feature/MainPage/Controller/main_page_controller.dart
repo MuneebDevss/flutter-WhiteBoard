@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:white_board/Core/Constants/enum.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/brush.dart';
@@ -24,15 +25,19 @@ class MainPageController {
   // Offset startPosition = const Offset(0, 0);
   // Offset zoomtranslatePosition = const Offset(0, 0);
   // Offset previousZoomPositiion = const Offset(0, 0);
+
+  Offset translation = const Offset(0, 0);
   late Offset clickedPositioned;
   int selectedShape = -1;
   int id = 0;
   int selectedContainerIndex = -1;
   Widget? image;
   SystemMouseCursor cursor = SystemMouseCursors.click;
-  List<MyStack> stack = [];
-  List<MyStack> redoStack = [];
-  List<Shapes> shapes = [];
+  TransformationController transformationController =
+      TransformationController();
+  final List<MyStack> stack = [];
+  final List<MyStack> redoStack = [];
+  final List<Shapes> shapes = [];
   final List<SelectedContainer> selectedContainer = [
     SelectedContainer(
       button: const Icon(Icons.square_outlined),
@@ -64,9 +69,11 @@ class MainPageController {
   ];
 
   bool shiftPressed = false;
+  bool grabingLine = false;
+  bool isDrawing = false;
 
+  double currentScale = 1;
   //Behaviors
-
   void manageTap(int index, Offset details) {
     if (!shapes[index].node!.hasFocus) {
       shapes[index].node!.requestFocus();
@@ -79,7 +86,7 @@ class MainPageController {
         addToStack(shapes[index]);
         shapes.removeAt(selectedShape);
         if (shapes.isEmpty) {
-          shapes = [];
+          shapes.clear();
           stack.clear();
           redoStack.clear();
         }
@@ -112,7 +119,7 @@ class MainPageController {
   void storePointerDownPosition(DragStartDetails offsets, BuildContext context,
       SideBarController controller) {
     final box = context.findRenderObject() as RenderBox;
-    final details = box.globalToLocal(offsets.localPosition);
+    final details = box.globalToLocal(offsets.localPosition) - translation;
     int length = shapes.length;
 
     //so that id do not collide or overflow
@@ -120,30 +127,33 @@ class MainPageController {
     // if (zoom > 1) {
     //   previousZoomPositiion = details;
     // }
+    // tap position for the grab
+
+    clickedPositioned = offsets.localPosition;
     if (selectedContainerIndex == 3) {
-      // tap position for the grab
-      clickedPositioned = details;
       if (selectedShape != -1) addToStack(shapes[selectedShape]);
     }
+
     //if not drawing any shape (deleting or grabing the shape)
     if (selectedContainerIndex == 8 || selectedContainerIndex == -1) {
+      //TODO doesn't get invoked
+      final Offset temp = offsets.localPosition;
+
       //tapped on a line
       for (int x = 0; x < length; x++) {
         if (shapes[x] is Line) {
-          Shapes line = shapes[x];
-          double dx = ((line.lT + line.rB) / 2).dx;
-          double dy = ((line.lT + line.rB) / 2).dy;
-          if ((dx - 10 <= details.dx && dx + 10 >= details.dx) &&
-              (dy - 10 <= details.dy && dy + 10 >= details.dy)) {
-            if (selectedContainerIndex == 8 && selectedShape == x) 
-            {
+          Offset curve = (shapes[x] as Line).curve!;
+
+          double dx = curve.dx;
+          double dy = curve.dy;
+          if ((dx - 10 <= temp.dx && dx + 10 >= temp.dx) &&
+              (dy - 10 <= temp.dy && dy + 10 >= temp.dy)) {
+            if (selectedContainerIndex == 8 && selectedShape == x) {
               addToStack(shapes[selectedShape]);
               shapes.removeAt(selectedShape);
               if (shapes.isEmpty) {
-                shapes = [];
+                shapes.clear();
               }
-              selectedShape = -1;
-            } else if (selectedShape == x) {
               selectedShape = -1;
             } else if (selectedShape != x) {
               selectedShape = x;
@@ -160,6 +170,7 @@ class MainPageController {
         strokeWidth: controller.strokeWidth,
         backgroundColor: controller.backgroundColor,
         id: id,
+        opacity: controller.opacity,
         node: FocusNode(),
       );
       shapes.add(shape);
@@ -170,6 +181,7 @@ class MainPageController {
         rB: Offset(details.dx, details.dy),
         stroke: controller.strokeColor,
         strokeStyle: controller.strokeStyle,
+        opacity: controller.opacity,
         strokeWidth: controller.strokeWidth,
         backgroundColor: controller.backgroundColor,
         id: id,
@@ -182,6 +194,7 @@ class MainPageController {
         lT: Offset(details.dx, details.dy),
         rB: Offset(details.dx, details.dy),
         stroke: controller.strokeColor,
+        opacity: controller.opacity,
         strokeStyle: controller.strokeStyle,
         strokeWidth: controller.strokeWidth,
         id: id,
@@ -214,6 +227,7 @@ class MainPageController {
         stroke: controller.strokeColor,
         strokeStyle: controller.strokeStyle,
         strokeWidth: controller.strokeWidth,
+        opacity: controller.opacity,
         id: id,
       );
       shapes.add(shape);
@@ -226,6 +240,7 @@ class MainPageController {
             stroke: controller.strokeColor,
             strokeStyle: controller.strokeStyle,
             strokeWidth: controller.strokeWidth,
+            opacity: controller.opacity,
             backgroundColor: controller.backgroundColor,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
@@ -237,13 +252,18 @@ class MainPageController {
         id += 1;
       }
     }
-
+    if (selectedContainerIndex != 8 &&
+        selectedContainerIndex != 6 &&
+        selectedContainerIndex != 3) {
+      isDrawing = true;
+    }
     //New Shape gets Selected By default
     if (selectedContainerIndex != 8 &&
         selectedContainerIndex != 6 &&
         selectedContainerIndex != 5 &&
         selectedContainerIndex != 3 &&
-        selectedContainerIndex != -1) {
+        selectedContainerIndex != -1 &&
+        shapes.isNotEmpty) {
       selectedShape = shapes.length - 1;
       shapes[selectedShape].node!.requestFocus();
     }
@@ -252,20 +272,33 @@ class MainPageController {
   void storePointerUpdatePosition(DragUpdateDetails details) {
     Offset position = details.localPosition;
 
+    //Handling line's Curve
+    if (selectedContainerIndex == -1) {
+      if (selectedShape != -1) {
+        if (shapes[selectedShape] is Line) {
+          (shapes[selectedShape] as Line).curve = position - translation;
+        }
+      }
+      //manage translations
+      else {
+        manageTranslation(position);
+      }
+    }
+
     // handling shape making
-    if (selectedContainerIndex == 0 || selectedContainerIndex == 7) {
-      makeRectangle(position);
+    else if (selectedContainerIndex == 0 || selectedContainerIndex == 7) {
+      makeRectangle(position - translation);
     } else if (selectedContainerIndex == 1) {
-      makeCircle(position);
+      makeCircle(position - translation);
     } else if (selectedContainerIndex == 2) {
-      makeLine(position);
+      makeLine(position - translation);
     } else if (selectedContainerIndex == 3) {
-      handleShapeSizingAndGrabing(
-          Offset(position.dx, position.dy)); // Shapes resizing
+      handleShapeSizingAndGrabing(Offset(position.dx - translation.dx,
+          position.dy - translation.dy)); // Shapes resizing
     } else if (selectedContainerIndex == 5) {
-      paint(position);
+      paint(position - translation);
     } else if (selectedContainerIndex == 6) {
-      eraseBrush(position);
+      eraseBrush(position - translation);
     }
   }
 
@@ -292,7 +325,14 @@ class MainPageController {
   }
 
   void handleShapeSizingAndGrabing(Offset position) {
-    if (selectedShape != -1) {
+    if (grabingLine && selectedShape != -1) {
+      Offset delta = position - clickedPositioned;
+      shapes[selectedShape].lT += delta;
+      shapes[selectedShape].rB += delta;
+      (shapes[selectedShape] as Line).curve =
+          (shapes[selectedShape] as Line).curve! + delta;
+      clickedPositioned = position;
+    } else if (selectedShape != -1) {
       Offset lT = shapes[selectedShape].lT;
       Offset rB = shapes[selectedShape].rB;
 
@@ -347,10 +387,7 @@ class MainPageController {
         }
         //new position of cursor relative to the previos/Clicked position
         else {
-          Offset delta = position - clickedPositioned;
-          shapes[selectedShape].lT = lT + delta;
-          shapes[selectedShape].rB = rB + delta;
-          clickedPositioned = position;
+          grab(position, lT, rB);
         }
       } else if (shapes[selectedShape] is Circle) {
         //tapped on bottom except corners
@@ -403,13 +440,10 @@ class MainPageController {
         }
         //new position of cursor relative to the previos/Clicked position
         else {
-          Offset delta = position - clickedPositioned;
-          shapes[selectedShape].lT = lT + delta;
-          shapes[selectedShape].rB = rB + delta;
-          clickedPositioned = position;
+          grab(position, lT, rB);
         }
       } else if (shapes[selectedShape] is Line) {
-        final Offset mid = (lT + rB) / 2;
+        final Offset mid = (shapes[selectedShape] as Line).curve!;
         //Clicked onstart position
         if (position.dx >= lT.dx - 10 &&
             position.dx <= lT.dx + 10 &&
@@ -432,10 +466,19 @@ class MainPageController {
           Offset delta = position - clickedPositioned;
           shapes[selectedShape].lT = lT + delta;
           shapes[selectedShape].rB = rB + delta;
+          (shapes[selectedShape] as Line).curve = mid + delta;
           clickedPositioned = position;
+          grabingLine = true;
         }
       }
     }
+  }
+
+  void grab(Offset position, Offset lT, Offset rB) {
+    Offset delta = position - clickedPositioned;
+    shapes[selectedShape].lT = lT + delta;
+    shapes[selectedShape].rB = rB + delta;
+    clickedPositioned = position;
   }
 
   void paint(Offset position) {
@@ -470,7 +513,10 @@ class MainPageController {
       shapes.removeAt(temp[i]);
     }
     if (shapes.isEmpty) {
-      shapes = [];
+      shapes.clear();
+      shapes.clear();
+      stack.clear();
+      redoStack.clear();
     }
   }
 
@@ -1281,8 +1327,37 @@ class MainPageController {
   }
 
   void managePanEnd(DragEndDetails det) {
+    grabingLine = false;
+    isDrawing = false;
+    //Brush selected
     if (selectedContainerIndex != 5) {
+      if (shapes.isNotEmpty && selectedShape != -1) {
+        //just clicked didn't drag while making the shape
+        if (shapes[selectedShape].lT.dx - shapes[selectedShape].rB.dx == 0 ||
+            shapes[selectedShape].lT.dy - shapes[selectedShape].rB.dy == 0) {
+          isDrawing = false;
+          shapes.removeLast();
+          selectedShape = -1;
+        } else if (selectedContainerIndex == 2) {
+          (shapes[selectedShape] as Line).curve =
+              (shapes[selectedShape].lT + shapes[selectedShape].rB) / 2;
+        }
+      }
       selectedContainerIndex = -1;
     }
+  }
+
+  void manageTranslation(Offset position) {
+    Offset delta = position - clickedPositioned;
+    translation += delta;
+    clickedPositioned = position;
+  }
+
+  double scale() {
+    return 1;
+  }
+
+  void setCurrentScale() {
+    currentScale = transformationController.value.getMaxScaleOnAxis();
   }
 }

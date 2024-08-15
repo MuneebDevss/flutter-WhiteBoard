@@ -4,6 +4,7 @@ import 'package:white_board/Core/Constants/enum.dart';
 import 'package:white_board/Core/Enitity/shape.dart';
 
 class Line extends Shapes {
+  Offset? curve;
   Line({
     super.strokeWidth = 4,
     super.stroke,
@@ -13,6 +14,7 @@ class Line extends Shapes {
     super.rB,
     required super.id,
     super.rotationAngle, required super.node,
+    this.curve
   });
   Line copyWith({
     double? strokeWidth,

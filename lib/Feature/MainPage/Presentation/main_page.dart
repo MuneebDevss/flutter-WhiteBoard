@@ -1,6 +1,7 @@
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:iconsax/iconsax.dart';
@@ -37,6 +38,9 @@ class MainPageState extends State<MainPage> {
   Shapes? selectedShape;
   @override
   void dispose() {
+    for (Shapes shape in controller.shapes) {
+      shape.node?.dispose();
+    }
     super.dispose();
   }
 
@@ -104,60 +108,71 @@ class MainPageState extends State<MainPage> {
               ),
             ),
             Expanded(
-              child: Container(
-                color: Colors.transparent,
-                width: screenWidth,
-                height: screenHeight - Sizes.appBarHeight - 50,
-                child: Stack(
-                  children: [
-                    GestureDetector(
-                      onPanStart: (event) {
-                        controller.storePointerDownPosition(
-                            event, context, _sideBarController);
-                        setState(() {});
-                      },
-                      onPanUpdate: (event) {
-                        controller.storePointerUpdatePosition(event);
-                        setState(() {});
-                      },
-                      onPanEnd: (DragEndDetails det) {
-                        //Brush selected
-                        controller.managePanEnd(det);
-                        setState(() {});
-                      },
-                      child: Container(
-                        color: Colors.transparent,
-                        width: screenWidth,
-                        height: screenHeight - Sizes.appBarHeight,
-                        child: Stack(
-                          children: shapeFactory(),
+              child: InteractiveViewer(
+                transformationController: controller.transformationController,
+                scaleFactor: isWeb
+                    ? kDefaultMouseScrollToScaleFactor
+                    : controller.scale(),
+                onInteractionEnd: (details) {
+                  controller.setCurrentScale();
+                },
+                maxScale: 4,
+                minScale: 0.1,
+                child: Container(
+                  color: Colors.transparent,
+                  width: double.infinity,
+                  height: double.infinity,
+                  child: Stack(
+                    children: [
+                      GestureDetector(
+                        onPanStart: (event) {
+                          controller.storePointerDownPosition(
+                              event, context, _sideBarController);
+                          setState(() {});
+                        },
+                        onPanUpdate: (event) {
+                          controller.storePointerUpdatePosition(event);
+                          setState(() {});
+                        },
+                        onPanEnd: (DragEndDetails det) {
+                          controller.managePanEnd(det);
+                          setState(() {});
+                        },
+                        child: Container(
+                          color: Colors.transparent,
+                          width: screenWidth,
+                          height: screenHeight - Sizes.appBarHeight,
+                          child: Stack(
+                            children: shapeFactory(),
+                          ),
                         ),
                       ),
-                    ),
-                    if (controller.selectedContainerIndex != 3 ||
-                        controller.selectedShape ==
-                            -1) //do not show while grabing or reshaping
-                      Positioned(
-                          left: 10,
-                          top: 10,
-                          child: controller.selectedContainerIndex != 4
-                              ? controller.selectedShape == -1
-                                  ? shapesSideBar(screenWidth)
-                                  : selectedShape is TextFieldRect
-                                      ? TextFieldSideBar(
-                                          controller: _sideBarController,
-                                          screenWidth: screenWidth,
-                                        )
-                                      : shapesSideBar(screenWidth)
-                              : TextFieldSideBar(
-                                  controller: _sideBarController,
-                                  screenWidth: screenWidth,
-                                )),
-                    //zoom
-                    zoom(screenWidth, screenHeight),
-                    undoRedo(screenWidth, screenHeight),
-                    //Undo Redo
-                  ],
+                      if ((controller.selectedContainerIndex != 3 ||
+                              controller.selectedShape == -1) &&
+                          !controller
+                              .isDrawing) //do not show while grabing or reshaping
+                        Positioned(
+                            left: 10,
+                            top: 10,
+                            child: controller.selectedContainerIndex != 4
+                                ? controller.selectedShape == -1
+                                    ? shapesSideBar(screenWidth)
+                                    : selectedShape is TextFieldRect
+                                        ? TextFieldSideBar(
+                                            controller: _sideBarController,
+                                            screenWidth: screenWidth,
+                                          )
+                                        : shapesSideBar(screenWidth)
+                                : TextFieldSideBar(
+                                    controller: _sideBarController,
+                                    screenWidth: screenWidth,
+                                  )),
+                      //zoom
+                      zoom(screenWidth, screenHeight),
+                      undoRedo(screenWidth, screenHeight),
+                      //Undo Redo
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -261,7 +276,7 @@ class MainPageState extends State<MainPage> {
                     onTap: () {
                       if (controller.selectedShape != -1) {
                         controller.stack.add(MyStack(
-                          strokeStyle: StrokeStyle.solid,
+                            strokeStyle: StrokeStyle.solid,
                             shape: controller.getShapeType(selectedShape!),
                             id: selectedShape!.id));
                         controller.shapes[controller.selectedShape]
@@ -282,7 +297,7 @@ class MainPageState extends State<MainPage> {
                     onTap: () {
                       if (controller.selectedShape != -1) {
                         controller.stack.add(MyStack(
-                          strokeStyle: StrokeStyle.dashedBorder,
+                            strokeStyle: StrokeStyle.dashedBorder,
                             shape: controller.getShapeType(selectedShape!),
                             id: selectedShape!.id));
                         controller.shapes[controller.selectedShape]
@@ -585,23 +600,30 @@ class MainPageState extends State<MainPage> {
       } else if (shape is TextFieldRect) {
         return buildTextField(pos, rB, index, shape);
       } else if (shape is Line) {
-        return CustomPaint(
-          
-          painter: LinePainter(
-              endPosition: rB,
-              startPosition: pos,
-              stroke: shape.stroke,
-              strokeWidth: shape.strokeWidth,
-              isGrabAble: controller.selectedShape == index,
-              opacity: shape.opacity, isDashed: shape.strokeStyle==StrokeStyle.dashedBorder),
+        return Transform.translate(
+          offset: controller.translation,
+          child: CustomPaint(
+            painter: LinePainter(
+                endPosition: rB,
+                startPosition: pos,
+                stroke: shape.stroke,
+                strokeWidth: shape.strokeWidth-1/shape.scale,
+                curvePoint: shape.curve,
+                isGrabAble: controller.selectedShape == index,
+                opacity: shape.opacity,
+                isDashed: shape.strokeStyle == StrokeStyle.dashedBorder),
+          ),
         );
       } else if (shape is Brush) {
-        return CustomPaint(
-          painter: BrushClipper(
-              points: shape.points,
-              stroke: shape.stroke,
-              strokeWidth: shape.strokeWidth,
-              opacity: shape.opacity),
+        return Transform.translate(
+          offset: controller.translation,
+          child: CustomPaint(
+            painter: BrushClipper(
+                points: shape.points,
+                stroke: shape.stroke,
+                strokeWidth: shape.strokeWidth-1/shape.scale,
+                opacity: shape.opacity),
+          ),
         );
       } else {
         return Container();
@@ -612,51 +634,59 @@ class MainPageState extends State<MainPage> {
   Positioned buildRectangle(Offset pos, Offset rB, int index, Rectangle shape) {
     return Positioned.fromRect(
       rect: Rect.fromPoints(pos, rB),
-      child: GestureDetector(
-        onTapDown: (TapDownDetails details) {
-          controller.manageTap(index, details.localPosition);
-          setState(() {});
-        },
-        child: Transform(
-          alignment: Alignment.center,
-          transform: Matrix4.identity()..rotateZ(shape.rotationAngle),
-          child: MouseRegion(
-            onHover: (event) {
-              controller.setMouseHover(event);
-              setState(() {});
-            },
-            cursor: SystemMouseCursors.click,
-            child: shape.strokeStyle==StrokeStyle.solid? Container(
-                  
-                  decoration: BoxDecoration(
-                    color: shape.backgroundColor.withOpacity(
-                        shape.backgroundColor == Colors.transparent
-                            ? 0
-                            : shape.opacity),
-                    border: Border.all(
-                        color: shape.stroke.withOpacity(shape.opacity),
-                        width: shape.strokeWidth),
-                    borderRadius: BorderRadius.circular(shape.borderRadius),
-                  ),
-                  child: shape.child,
-                ):DottedBorder(
-                  color: shape.stroke.withOpacity(shape.opacity),
-                  strokeWidth: shape.strokeWidth,
-                  dashPattern: const [8, 4],
-                  radius: Radius.circular(shape.borderRadius),
+      child: Transform(
+        alignment: Alignment.center,
+        transform: Matrix4.identity()
+          ..rotateZ(shape.rotationAngle)
+          ..translate(controller.translation.dx, controller.translation.dy),
+        child: MouseRegion(
+          onHover: (event) {
+            controller.setMouseHover(event);
+            setState(() {});
+          },
+          cursor: SystemMouseCursors.click,
+          child: shape.strokeStyle == StrokeStyle.solid
+              ? GestureDetector(
+                  onTapDown: (TapDownDetails details) {
+                    controller.manageTap(index, details.localPosition);
+                    setState(() {});
+                  },
                   child: Container(
                     decoration: BoxDecoration(
                       color: shape.backgroundColor.withOpacity(
                           shape.backgroundColor == Colors.transparent
                               ? 0
                               : shape.opacity),
-                      
+                      border: Border.all(
+                          color: shape.stroke.withOpacity(shape.opacity),
+                          width: shape.strokeWidth-shape.scale>0?shape.strokeWidth-shape.scale:shape.strokeWidth-1/shape.scale,),
                       borderRadius: BorderRadius.circular(shape.borderRadius),
                     ),
                     child: shape.child,
                   ),
+                )
+              : GestureDetector(
+                  onTapDown: (TapDownDetails details) {
+                    controller.manageTap(index, details.localPosition);
+                    setState(() {});
+                  },
+                  child: DottedBorder(
+                    color: shape.stroke.withOpacity(shape.opacity),
+                    strokeWidth: shape.strokeWidth-1/shape.scale,
+                    dashPattern: const [8, 4],
+                    radius: Radius.circular(shape.borderRadius),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: shape.backgroundColor.withOpacity(
+                            shape.backgroundColor == Colors.transparent
+                                ? 0
+                                : shape.opacity),
+                        borderRadius: BorderRadius.circular(shape.borderRadius),
+                      ),
+                      child: shape.child,
+                    ),
+                  ),
                 ),
-          ),
         ),
       ),
     );
@@ -672,47 +702,50 @@ class MainPageState extends State<MainPage> {
         },
         child: Transform(
           alignment: Alignment.center,
-          transform: Matrix4.identity()..rotateZ(shape.rotationAngle),
+          transform: Matrix4.identity()
+            ..rotateZ(shape.rotationAngle)
+            ..translate(controller.translation.dx, controller.translation.dy),
           child: MouseRegion(
             onHover: (event) {
               controller.setMouseHover(event);
               setState(() {});
             },
             cursor: SystemMouseCursors.click,
-            child: shape.strokeStyle==StrokeStyle.solid? Container(
-                  
-                  decoration: BoxDecoration(
-                    color: shape.backgroundColor.withOpacity(
-                        shape.backgroundColor == Colors.transparent
-                            ? 0
-                            : shape.opacity),
-                    border: Border.all(
-                        color: shape.stroke.withOpacity(shape.opacity),
-                        width: shape.strokeWidth),
-                    borderRadius: BorderRadius.circular(shape.borderRadius),
-                  ),
-                  child: shape.child,
-                ):DottedBorder(
-                  color: shape.stroke.withOpacity(shape.opacity),
-                  strokeWidth: shape.strokeWidth,
+            child: shape.strokeStyle == StrokeStyle.solid
+                ? Container(
+                    decoration: BoxDecoration(
+                      color: shape.backgroundColor.withOpacity(
+                          shape.backgroundColor == Colors.transparent
+                              ? 0
+                              : shape.opacity),
+                      border: Border.all(
+                          color: shape.stroke.withOpacity(shape.opacity),
+                          width: shape.strokeWidth-shape.scale>0?shape.strokeWidth-shape.scale:shape.strokeWidth-1/shape.scale,),
+                      borderRadius: BorderRadius.circular(shape.borderRadius),
+                    ),
+                    child: shape.child,
+                  )
+                : DottedBorder(
+                    color: shape.stroke.withOpacity(shape.opacity),
+                    strokeWidth: shape.strokeWidth-1/shape.scale,
                     radius: Radius.circular(shape.borderRadius),
-                  dashPattern: const [8, 4],
-                  borderType: BorderType.RRect,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(shape.borderRadius),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: shape.backgroundColor.withOpacity(
-                            shape.backgroundColor == Colors.transparent
-                                ? 0
-                                : shape.opacity),
-                        
-                        borderRadius: BorderRadius.circular(shape.borderRadius),
+                    dashPattern: const [8, 4],
+                    borderType: BorderType.RRect,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(shape.borderRadius),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: shape.backgroundColor.withOpacity(
+                              shape.backgroundColor == Colors.transparent
+                                  ? 0
+                                  : shape.opacity),
+                          borderRadius:
+                              BorderRadius.circular(shape.borderRadius),
+                        ),
+                        child: shape.child,
                       ),
-                      child: shape.child,
                     ),
                   ),
-                ),
           ),
         ),
       ),
@@ -771,7 +804,9 @@ class MainPageState extends State<MainPage> {
       rect: Rect.fromPoints(pos, rB),
       child: Transform(
         alignment: Alignment.center,
-        transform: Matrix4.identity()..rotateZ(shape.rotationAngle),
+        transform: Matrix4.identity()
+          ..rotateZ(shape.rotationAngle)
+          ..translate(controller.translation.dx, controller.translation.dy),
         child: MouseRegion(
           onHover: (event) {
             controller.setMouseHover(event);
@@ -786,7 +821,7 @@ class MainPageState extends State<MainPage> {
             child: DottedBorder(
               padding: const EdgeInsets.all(10),
               color: Colors.blue,
-              strokeWidth: 2,
+              strokeWidth: shape.strokeWidth-1/shape.scale,
               dashPattern: const [8, 4],
               child: KeyboardListener(
                 focusNode: shape.node!,
@@ -800,36 +835,38 @@ class MainPageState extends State<MainPage> {
                   }
                   setState(() {});
                 },
-                child: shape.strokeStyle==StrokeStyle.solid? Container(
-                  
-                  decoration: BoxDecoration(
-                    color: shape.backgroundColor.withOpacity(
-                        shape.backgroundColor == Colors.transparent
-                            ? 0
-                            : shape.opacity),
-                    border: Border.all(
+                child: shape.strokeStyle == StrokeStyle.solid
+                    ? Container(
+                        decoration: BoxDecoration(
+                          color: shape.backgroundColor.withOpacity(
+                              shape.backgroundColor == Colors.transparent
+                                  ? 0
+                                  : shape.opacity),
+                          border: Border.all(
+                              color: shape.stroke.withOpacity(shape.opacity),
+                              width: shape.strokeWidth-shape.scale>0?shape.strokeWidth-shape.scale:shape.strokeWidth-shape.scale>0?shape.strokeWidth-shape.scale:shape.strokeWidth-1/shape.scale,),
+                          borderRadius:
+                              BorderRadius.circular(shape.borderRadius),
+                        ),
+                        child: shape.child,
+                      )
+                    : DottedBorder(
                         color: shape.stroke.withOpacity(shape.opacity),
-                        width: shape.strokeWidth),
-                    borderRadius: BorderRadius.circular(shape.borderRadius),
-                  ),
-                  child: shape.child,
-                ):DottedBorder(
-                  color: shape.stroke.withOpacity(shape.opacity),
-                  strokeWidth: shape.strokeWidth,
-                  dashPattern: const [8, 4],
-                  radius: Radius.circular(shape.borderRadius),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: shape.backgroundColor.withOpacity(
-                          shape.backgroundColor == Colors.transparent
-                              ? 0
-                              : shape.opacity),
-                      
-                      borderRadius: BorderRadius.circular(shape.borderRadius),
-                    ),
-                    child: shape.child,
-                  ),
-                ),
+                        strokeWidth: shape.strokeWidth-1/shape.scale,
+                        dashPattern: const [8, 4],
+                        radius: Radius.circular(shape.borderRadius),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: shape.backgroundColor.withOpacity(
+                                shape.backgroundColor == Colors.transparent
+                                    ? 0
+                                    : shape.opacity),
+                            borderRadius:
+                                BorderRadius.circular(shape.borderRadius),
+                          ),
+                          child: shape.child,
+                        ),
+                      ),
               ),
             ),
           ),
@@ -843,7 +880,9 @@ class MainPageState extends State<MainPage> {
       rect: Rect.fromPoints(pos, rB),
       child: Transform(
         alignment: Alignment.center,
-        transform: Matrix4.identity()..rotateZ(shape.rotationAngle),
+        transform: Matrix4.identity()
+          ..rotateZ(shape.rotationAngle)
+          ..translate(controller.translation.dx, controller.translation.dy),
         child: MouseRegion(
           onHover: (event) {
             controller.setMouseHover(event);
@@ -858,7 +897,7 @@ class MainPageState extends State<MainPage> {
             child: DottedBorder(
               padding: const EdgeInsets.all(10),
               color: Colors.blue,
-              strokeWidth: 2,
+              strokeWidth: shape.strokeWidth-1/shape.scale,
               dashPattern: const [8, 4],
               child: KeyboardListener(
                 focusNode: shape.node!,
@@ -872,40 +911,43 @@ class MainPageState extends State<MainPage> {
                   }
                   setState(() {});
                 },
-                child: shape.strokeStyle==StrokeStyle.solid? Container(
-                  
-                  decoration: BoxDecoration(
-                    color: shape.backgroundColor.withOpacity(
-                        shape.backgroundColor == Colors.transparent
-                            ? 0
-                            : shape.opacity),
-                    border: Border.all(
+                child: shape.strokeStyle == StrokeStyle.solid
+                    ? Container(
+                        decoration: BoxDecoration(
+                          color: shape.backgroundColor.withOpacity(
+                              shape.backgroundColor == Colors.transparent
+                                  ? 0
+                                  : shape.opacity),
+                          border: Border.all(
+                              color: shape.stroke.withOpacity(shape.opacity),
+                              width: shape.strokeWidth-shape.scale>0?shape.strokeWidth-shape.scale:shape.strokeWidth-1/shape.scale,),
+                          borderRadius:
+                              BorderRadius.circular(shape.borderRadius),
+                        ),
+                        child: shape.child,
+                      )
+                    : DottedBorder(
                         color: shape.stroke.withOpacity(shape.opacity),
-                        width: shape.strokeWidth),
-                    borderRadius: BorderRadius.circular(shape.borderRadius),
-                  ),
-                  child: shape.child,
-                ):DottedBorder(
-                  color: shape.stroke.withOpacity(shape.opacity),
-                  strokeWidth: shape.strokeWidth,
-                    radius: Radius.circular(shape.borderRadius),
-                  dashPattern: const [8, 4],
-                  borderType: BorderType.RRect,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(shape.borderRadius),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: shape.backgroundColor.withOpacity(
-                            shape.backgroundColor == Colors.transparent
-                                ? 0
-                                : shape.opacity),
-                        
-                        borderRadius: BorderRadius.circular(shape.borderRadius),
+                        strokeWidth: shape.strokeWidth-1/shape.scale,
+                        radius: Radius.circular(shape.borderRadius),
+                        dashPattern: const [8, 4],
+                        borderType: BorderType.RRect,
+                        child: ClipRRect(
+                          borderRadius:
+                              BorderRadius.circular(shape.borderRadius),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: shape.backgroundColor.withOpacity(
+                                  shape.backgroundColor == Colors.transparent
+                                      ? 0
+                                      : shape.opacity),
+                              borderRadius:
+                                  BorderRadius.circular(shape.borderRadius),
+                            ),
+                            child: shape.child,
+                          ),
+                        ),
                       ),
-                      child: shape.child,
-                    ),
-                  ),
-                ),
               ),
             ),
           ),

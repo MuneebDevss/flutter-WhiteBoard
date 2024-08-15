@@ -5,6 +5,7 @@ import 'package:white_board/Core/HelpingFunctions/dash_path.dart';
 
 class LinePainter extends CustomPainter {
   Offset startPosition;
+  Offset? curvePoint;
   final Offset endPosition;
   final Color stroke;
   final double strokeWidth, opacity;
@@ -12,6 +13,7 @@ class LinePainter extends CustomPainter {
   final bool isDashed;
   LinePainter(
       {required this.stroke,
+      this.curvePoint,
       required this.isDashed,
       required this.strokeWidth,
       required this.isGrabAble,
@@ -23,32 +25,31 @@ class LinePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = stroke.withOpacity(opacity)
-      ..strokeWidth = strokeWidth..style=PaintingStyle.stroke;
-
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+    final curvedPoint=curvePoint??(startPosition + endPosition) / 2;
+    final Path linePath = Path();
+    linePath.moveTo(startPosition.dx, startPosition.dy);
+    linePath.quadraticBezierTo(curvedPoint.dx,curvedPoint.dy,endPosition.dx, endPosition.dy);
     if (!isDashed) {
-      canvas.drawLine(startPosition, endPosition, paint);
+      canvas.drawPath(linePath, paint);
     } else {
-      final Path path = Path();
-      path.moveTo(startPosition.dx, startPosition.dy);
-      path.lineTo(endPosition.dx, endPosition.dy);
-      PathMetrics matrices = path.computeMetrics();
+      PathMetrics matrices = linePath.computeMetrics();
       double distance = matrices.first.length;
-      final newPath = dashPath(path,
-          dashArray: CircularIntervalList(
-      
-      [distance / 10, distance / 10]));
-      
-
+      final newPath = dashPath(linePath,
+          dashArray: CircularIntervalList([distance / 10, distance / 10]));
       canvas.drawPath(newPath, paint);
     }
+    
     if (isGrabAble) {
-      Offset midpoint = (startPosition + endPosition) / 2;
+      Offset midpoint = curvedPoint;
       Offset midpoint2 = (startPosition);
       Offset midpoint3 = (endPosition);
       Path path = Path();
       path.addOval(Rect.fromCircle(center: midpoint, radius: 10));
       path.addOval(Rect.fromCircle(center: midpoint2, radius: 10));
       path.addOval(Rect.fromCircle(center: midpoint3, radius: 10));
+
       // Draw the path on the canvas
       canvas.drawPath(path, paint..color = Colors.blue);
     }

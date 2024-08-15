@@ -11,7 +11,9 @@ class Shapes {
   double opacity;
   Offset lT;
   Offset rB;
+  double scale;
   Shapes({
+    this.scale=1,
     this.node,
     this.rotationAngle = 0,
     required this.id,
