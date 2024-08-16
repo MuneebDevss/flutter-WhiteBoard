@@ -1,0 +1,10 @@
+# Mark image files as binary to prevent Git from treating them as text
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+
+# Handle line endings for text files
+*.txt text eol=lf
+*.md text eol=lf
+*.bat text eol=crlf
