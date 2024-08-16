@@ -9,6 +9,7 @@ class Rectangle extends Shapes {
   Rectangle({
     super.strokeWidth = 4,
     super.stroke,
+    super.scale,
     super.opacity,
     super.strokeStyle,
     this.backgroundColor = Colors.transparent,
@@ -17,7 +18,8 @@ class Rectangle extends Shapes {
     super.lT,
     super.rB,
     required super.id,
-    super.rotationAngle, required super.node,
+    super.rotationAngle,
+    required super.node,
   });
   Rectangle copyWith({
     Color? backgroundColor,
@@ -41,7 +43,7 @@ class Rectangle extends Shapes {
       opacity: opacity ?? this.opacity,
       strokeStyle: strokeStyle ?? this.strokeStyle,
       lT: lT ?? this.lT,
-      rB: rB?? this.rB,
+      rB: rB ?? this.rB,
       id: id ?? this.id,
       rotationAngle: rotationAngle ?? this.rotationAngle,
       node: node ?? this.node,

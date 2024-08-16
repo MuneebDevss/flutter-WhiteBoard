@@ -38,9 +38,7 @@ class MainPageState extends State<MainPage> {
   Shapes? selectedShape;
   @override
   void dispose() {
-    for (Shapes shape in controller.shapes) {
-      shape.node?.dispose();
-    }
+    controller.disposeFocusNodes();
     super.dispose();
   }
 
@@ -607,7 +605,7 @@ class MainPageState extends State<MainPage> {
                 endPosition: rB,
                 startPosition: pos,
                 stroke: shape.stroke,
-                strokeWidth: shape.strokeWidth-1/shape.scale,
+                strokeWidth: shape.strokeWidth - 1 / shape.scale,
                 curvePoint: shape.curve,
                 isGrabAble: controller.selectedShape == index,
                 opacity: shape.opacity,
@@ -621,7 +619,7 @@ class MainPageState extends State<MainPage> {
             painter: BrushClipper(
                 points: shape.points,
                 stroke: shape.stroke,
-                strokeWidth: shape.strokeWidth-1/shape.scale,
+                strokeWidth: shape.strokeWidth - 1 / shape.scale,
                 opacity: shape.opacity),
           ),
         );
@@ -658,8 +656,11 @@ class MainPageState extends State<MainPage> {
                               ? 0
                               : shape.opacity),
                       border: Border.all(
-                          color: shape.stroke.withOpacity(shape.opacity),
-                          width: shape.strokeWidth-shape.scale>0?shape.strokeWidth-shape.scale:shape.strokeWidth-1/shape.scale,),
+                        color: shape.stroke.withOpacity(shape.opacity),
+                        width: shape.strokeWidth - shape.scale > 0
+                            ? shape.strokeWidth - shape.scale
+                            : shape.strokeWidth - 1 / shape.scale,
+                      ),
                       borderRadius: BorderRadius.circular(shape.borderRadius),
                     ),
                     child: shape.child,
@@ -672,7 +673,7 @@ class MainPageState extends State<MainPage> {
                   },
                   child: DottedBorder(
                     color: shape.stroke.withOpacity(shape.opacity),
-                    strokeWidth: shape.strokeWidth-1/shape.scale,
+                    strokeWidth: shape.strokeWidth - 1 / shape.scale,
                     dashPattern: const [8, 4],
                     radius: Radius.circular(shape.borderRadius),
                     child: Container(
@@ -719,15 +720,18 @@ class MainPageState extends State<MainPage> {
                               ? 0
                               : shape.opacity),
                       border: Border.all(
-                          color: shape.stroke.withOpacity(shape.opacity),
-                          width: shape.strokeWidth-shape.scale>0?shape.strokeWidth-shape.scale:shape.strokeWidth-1/shape.scale,),
+                        color: shape.stroke.withOpacity(shape.opacity),
+                        width: shape.strokeWidth - shape.scale > 0
+                            ? shape.strokeWidth - shape.scale
+                            : shape.strokeWidth - 1 / shape.scale,
+                      ),
                       borderRadius: BorderRadius.circular(shape.borderRadius),
                     ),
                     child: shape.child,
                   )
                 : DottedBorder(
                     color: shape.stroke.withOpacity(shape.opacity),
-                    strokeWidth: shape.strokeWidth-1/shape.scale,
+                    strokeWidth: shape.strokeWidth - 1 / shape.scale,
                     radius: Radius.circular(shape.borderRadius),
                     dashPattern: const [8, 4],
                     borderType: BorderType.RRect,
@@ -755,44 +759,32 @@ class MainPageState extends State<MainPage> {
   Positioned buildTextField(
       Offset pos, Offset rB, int index, TextFieldRect shape) {
     if (controller.selectedShape == index) {
-      return Positioned(
-        left: pos.dx,
-        top: pos.dy,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            onTapDown: (TapDownDetails details) {
-              controller.manageTap(index, details.localPosition);
-              setState(() {});
-            },
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.blue, width: 2),
-              ),
-              child: Container(
-                margin: const EdgeInsets.all(5),
-                child: shape.child,
-              ),
+      return Positioned.fromRect(
+        rect: Rect.fromPoints(pos, rB),
+        child: GestureDetector(
+          onDoubleTap: () {
+            _sideBarController.manageTextFieldTap(index,shape,controller);
+            setState(() {});
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.blue, width: 2),
+            ),
+            child: IntrinsicWidth(
+              child: shape.child,
             ),
           ),
         ),
       );
     } else {
-      return Positioned(
-        left: pos.dx,
-        top: pos.dy,
-        child: MouseRegion(
-          cursor: SystemMouseCursors.click,
-          child: GestureDetector(
-            onTapDown: (TapDownDetails details) {
-              controller.manageTap(index, details.localPosition);
-              setState(() {});
-            },
-            child: Container(
-              margin: const EdgeInsets.all(5),
-              child: shape.child,
-            ),
-          ),
+      return Positioned.fromRect(
+        rect: Rect.fromPoints(pos, rB),
+        child: GestureDetector(
+          onTap: () {
+            controller.manageTap(index, pos);
+            setState(() {});
+          },
+          child: IntrinsicWidth(child: shape.child),
         ),
       );
     }
@@ -821,7 +813,7 @@ class MainPageState extends State<MainPage> {
             child: DottedBorder(
               padding: const EdgeInsets.all(10),
               color: Colors.blue,
-              strokeWidth: shape.strokeWidth-1/shape.scale,
+              strokeWidth: shape.strokeWidth - 1 / shape.scale,
               dashPattern: const [8, 4],
               child: KeyboardListener(
                 focusNode: shape.node!,
@@ -843,8 +835,13 @@ class MainPageState extends State<MainPage> {
                                   ? 0
                                   : shape.opacity),
                           border: Border.all(
-                              color: shape.stroke.withOpacity(shape.opacity),
-                              width: shape.strokeWidth-shape.scale>0?shape.strokeWidth-shape.scale:shape.strokeWidth-shape.scale>0?shape.strokeWidth-shape.scale:shape.strokeWidth-1/shape.scale,),
+                            color: shape.stroke.withOpacity(shape.opacity),
+                            width: shape.strokeWidth - shape.scale > 0
+                                ? shape.strokeWidth - shape.scale
+                                : shape.strokeWidth - shape.scale > 0
+                                    ? shape.strokeWidth - shape.scale
+                                    : shape.strokeWidth - 1 / shape.scale,
+                          ),
                           borderRadius:
                               BorderRadius.circular(shape.borderRadius),
                         ),
@@ -852,7 +849,7 @@ class MainPageState extends State<MainPage> {
                       )
                     : DottedBorder(
                         color: shape.stroke.withOpacity(shape.opacity),
-                        strokeWidth: shape.strokeWidth-1/shape.scale,
+                        strokeWidth: shape.strokeWidth - 1 / shape.scale,
                         dashPattern: const [8, 4],
                         radius: Radius.circular(shape.borderRadius),
                         child: Container(
@@ -897,7 +894,7 @@ class MainPageState extends State<MainPage> {
             child: DottedBorder(
               padding: const EdgeInsets.all(10),
               color: Colors.blue,
-              strokeWidth: shape.strokeWidth-1/shape.scale,
+              strokeWidth: shape.strokeWidth - 1 / shape.scale,
               dashPattern: const [8, 4],
               child: KeyboardListener(
                 focusNode: shape.node!,
@@ -919,8 +916,11 @@ class MainPageState extends State<MainPage> {
                                   ? 0
                                   : shape.opacity),
                           border: Border.all(
-                              color: shape.stroke.withOpacity(shape.opacity),
-                              width: shape.strokeWidth-shape.scale>0?shape.strokeWidth-shape.scale:shape.strokeWidth-1/shape.scale,),
+                            color: shape.stroke.withOpacity(shape.opacity),
+                            width: shape.strokeWidth - shape.scale > 0
+                                ? shape.strokeWidth - shape.scale
+                                : shape.strokeWidth - 1 / shape.scale,
+                          ),
                           borderRadius:
                               BorderRadius.circular(shape.borderRadius),
                         ),
@@ -928,7 +928,7 @@ class MainPageState extends State<MainPage> {
                       )
                     : DottedBorder(
                         color: shape.stroke.withOpacity(shape.opacity),
-                        strokeWidth: shape.strokeWidth-1/shape.scale,
+                        strokeWidth: shape.strokeWidth - 1 / shape.scale,
                         radius: Radius.circular(shape.borderRadius),
                         dashPattern: const [8, 4],
                         borderType: BorderType.RRect,

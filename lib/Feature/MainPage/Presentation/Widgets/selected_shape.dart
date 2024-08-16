@@ -9,13 +9,13 @@ class SelectShape extends StatelessWidget {
   });
 
   final double screenHeight;
-  final Icon button;
+  final Widget button;
   final bool isSelected;
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
       margin: const EdgeInsets.all(5),
-      height: screenHeight - (screenHeight / 1.06),
+      height: screenHeight - (screenHeight / 1.04),
       decoration: BoxDecoration(
         color: isSelected ? Colors.blue.withOpacity(0.5) : null,
         borderRadius: BorderRadius.circular(10),

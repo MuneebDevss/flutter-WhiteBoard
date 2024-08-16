@@ -14,6 +14,7 @@ class Triangle extends Shapes {
     this.child,
     super.lT,
     required super.id,
+    super.scale,
     super.rotationAngle, required super.node,
   });
     Triangle copyWith({

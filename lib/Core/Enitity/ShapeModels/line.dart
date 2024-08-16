@@ -1,21 +1,21 @@
-
 import 'package:flutter/material.dart';
 import 'package:white_board/Core/Constants/enum.dart';
 import 'package:white_board/Core/Enitity/shape.dart';
 
 class Line extends Shapes {
   Offset? curve;
-  Line({
-    super.strokeWidth = 4,
-    super.stroke,
-    super.opacity,
-    super.strokeStyle,
-    super.lT,
-    super.rB,
-    required super.id,
-    super.rotationAngle, required super.node,
-    this.curve
-  });
+  Line(
+      {super.strokeWidth = 4,
+      super.stroke,
+      super.opacity,
+      super.strokeStyle,
+      super.lT,
+      super.scale,
+      super.rB,
+      required super.id,
+      super.rotationAngle,
+      required super.node,
+      this.curve});
   Line copyWith({
     double? strokeWidth,
     Color? stroke,

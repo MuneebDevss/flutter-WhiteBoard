@@ -4,7 +4,7 @@ import 'package:white_board/Core/Enitity/shape.dart';
 
 class TextFieldRect extends Shapes {
   Widget? child;
-
+  TextEditingController controller = TextEditingController();
   TextFieldRect(
       {super.strokeWidth = 4,
       super.stroke,
@@ -12,6 +12,7 @@ class TextFieldRect extends Shapes {
       super.strokeStyle,
       this.child,
       super.lT,
+      super.scale,
       super.rB,
       required super.id,
       super.rotationAngle,

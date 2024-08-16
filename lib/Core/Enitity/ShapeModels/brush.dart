@@ -10,6 +10,7 @@ class Brush extends Shapes {
       super.stroke,
       super.opacity,
       super.strokeStyle,
+      super.scale,
       required super.id});
        Brush copyWith({
     List<Offset>? points,

@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:white_board/Core/Constants/enum.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/brush.dart';
@@ -40,28 +39,28 @@ class MainPageController {
   final List<Shapes> shapes = [];
   final List<SelectedContainer> selectedContainer = [
     SelectedContainer(
-      button: const Icon(Icons.square_outlined),
+      button: Image.asset('assets/Icon/rectangle.png',fit: BoxFit.contain,),
     ),
     SelectedContainer(
       button: const Icon(Icons.circle_outlined),
     ),
     SelectedContainer(
-      button: const Icon(Icons.arrow_forward),
+      button: Image.asset('assets/Icon/arrow.png',fit: BoxFit.contain,),
     ),
     SelectedContainer(
-      button: const Icon(Icons.pan_tool_alt_outlined),
+      button: Image.asset('assets/Icon/grab.png',fit: BoxFit.contain,height: 20,),
     ),
     SelectedContainer(
-      button: const Icon(Icons.text_format_outlined),
+      button: Image.asset('assets/Icon/textfield.png'),
     ),
     SelectedContainer(
-      button: const Icon(Iconsax.pen_tool),
+      button: Image.asset('assets/Icon/bursh.png'),
     ),
     SelectedContainer(
       button: const Icon(Iconsax.eraser),
     ),
     SelectedContainer(
-      button: const Icon(Icons.image),
+      button: Image.asset('assets/Icon/gallery.png'),
     ),
     SelectedContainer(
       button: const Icon(Icons.delete_forever),
@@ -86,6 +85,7 @@ class MainPageController {
         addToStack(shapes[index]);
         shapes.removeAt(selectedShape);
         if (shapes.isEmpty) {
+          disposeFocusNodes();
           shapes.clear();
           stack.clear();
           redoStack.clear();
@@ -164,6 +164,7 @@ class MainPageController {
     } else if (selectedContainerIndex == 0) {
       Shapes shape = rectangle.Rectangle(
         lT: Offset(details.dx, details.dy),
+        scale: currentScale,
         rB: Offset(details.dx, details.dy),
         stroke: controller.strokeColor,
         strokeStyle: controller.strokeStyle,
@@ -177,6 +178,7 @@ class MainPageController {
       id += 1;
     } else if (selectedContainerIndex == 1) {
       Shapes shape = Circle(
+        scale: currentScale,
         lT: Offset(details.dx, details.dy),
         rB: Offset(details.dx, details.dy),
         stroke: controller.strokeColor,
@@ -191,6 +193,7 @@ class MainPageController {
       id += 1;
     } else if (selectedContainerIndex == 2) {
       Shapes shape = Line(
+        scale: currentScale,
         lT: Offset(details.dx, details.dy),
         rB: Offset(details.dx, details.dy),
         stroke: controller.strokeColor,
@@ -204,16 +207,17 @@ class MainPageController {
       id += 1;
     } else if (selectedContainerIndex == 4) {
       Shapes shape = TextFieldRect(
+          scale: currentScale,
           lT: Offset(details.dx, details.dy),
           rB: Offset(details.dx + 50, details.dy - 50),
           stroke: Colors.transparent,
           strokeStyle: StrokeStyle.dashedBorder,
           child: MyTextfield(
-            style: const TextStyle(
-                fontSize: 12,
-                color: Colors.black,
+            style:  TextStyle(
+                fontSize: controller.getFontSize(),
+                color: controller.textcolor.withOpacity(controller.opacity),
+                fontFamily: controller.getFontFamily(),
                 overflow: TextOverflow.visible),
-            fontSize: 12,
             node: FocusNode(),
           ),
           id: id,
@@ -223,6 +227,7 @@ class MainPageController {
       id += 1;
     } else if (selectedContainerIndex == 5) {
       Shapes shape = Brush(
+        scale: currentScale,
         points: [Offset(details.dx, details.dy)],
         stroke: controller.strokeColor,
         strokeStyle: controller.strokeStyle,
@@ -236,6 +241,7 @@ class MainPageController {
       if (image != null) {
         Shapes shape = rectangle.Rectangle(
             lT: Offset(details.dx, details.dy),
+            scale: currentScale,
             rB: Offset(details.dx, details.dy),
             stroke: controller.strokeColor,
             strokeStyle: controller.strokeStyle,
@@ -513,7 +519,7 @@ class MainPageController {
       shapes.removeAt(temp[i]);
     }
     if (shapes.isEmpty) {
-      shapes.clear();
+      disposeFocusNodes();
       shapes.clear();
       stack.clear();
       redoStack.clear();
@@ -932,6 +938,7 @@ class MainPageController {
         shapes.removeLast();
       } else {
         //cannot redo after undoing everything
+        disposeFocusNodes();
         redoStack.clear();
       }
       return;
@@ -1360,4 +1367,12 @@ class MainPageController {
   void setCurrentScale() {
     currentScale = transformationController.value.getMaxScaleOnAxis();
   }
+
+  void disposeFocusNodes() {
+    for (Shapes shape in shapes) {
+      shape.node?.dispose();
+    }
+  }
+
+  
 }

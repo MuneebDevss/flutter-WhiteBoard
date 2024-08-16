@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 class SelectedContainer {
-  final Icon button;
-  Offset tapPositon;
+  final Widget button;
   double width, height;
-  SelectedContainer({required this.button,this.tapPositon=const Offset(0, 0),  this.height=0,  this.width=0});
+  SelectedContainer({required this.button,  this.height=0,  this.width=0});
 }

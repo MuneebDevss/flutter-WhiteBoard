@@ -16,6 +16,7 @@ class Circle extends Shapes {
       super.strokeStyle,
       super.lT,
       this.backgroundColor = Colors.transparent,
+      super.scale,
       super.rB,
       required super.id, required super.node});
       Circle copyWith({
