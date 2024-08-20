@@ -16,9 +16,18 @@ class MyStack {
   final Color? backgroundColor;
   final double? borderRadius;
   final Widget? child;
+  double? fontSize;
+  String? fontFamily;
+  Color ?textColor;
+  TextAlignment? alignment;
 
   // Constructor
   MyStack( {
+    this.fontFamily,
+    this.fontSize,
+    this.alignment,
+    this.textColor,
+    
     required this.shape,
     this.node,
     this.rotationAngle,

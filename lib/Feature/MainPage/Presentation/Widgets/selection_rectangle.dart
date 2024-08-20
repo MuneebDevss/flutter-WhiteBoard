@@ -1,9 +1,7 @@
+import 'package:flutter/material.dart';
 
-
-  import 'package:flutter/material.dart';
-
-class MyStrokeStyle extends StatelessWidget {
-  const MyStrokeStyle(
+class MySelectionRectangle extends StatelessWidget {
+  const MySelectionRectangle(
       {super.key, required this.iconData, required this.isSelected});
   final Widget iconData;
   final bool isSelected;
