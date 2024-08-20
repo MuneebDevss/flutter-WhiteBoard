@@ -22,7 +22,7 @@ class SideBarController {
   Color backgroundColor;
   double strokeWidth;
   StrokeStyle strokeStyle;
-  FontStyle fontStyle;
+  FontFamily fontStyle;
   FontSize fontSize;
   Color textcolor;
   TextAlignment alignment;
@@ -30,7 +30,7 @@ class SideBarController {
   SideBarController({
     this.textcolor = const Color(0xFFf08c00),
     this.fontSize = FontSize.m,
-    this.fontStyle = FontStyle.commicShans,
+    this.fontStyle = FontFamily.commicShans,
     this.alignment = TextAlignment.center,
     this.backgroundColor = Colors.transparent,
     this.strokeColor = Colors.black,
@@ -41,11 +41,28 @@ class SideBarController {
 
   void manageTextFieldTap(
       int index, TextFieldRect rect, MainPageController controller) {
-    controller.selectedShape = -1;
-    (controller.shapes[index] as TextFieldRect).controller.text =
-        (rect.child as Text).data!;
-    (controller.shapes[index] as TextFieldRect).child =
-        MyTextfield(style: (rect.child as Text).style!, node: rect.node!);
+    //to make sure it is selected in order to convert it into the text from the textfield
+    controller.selectedShape = index;
+    //select all the text
+    (controller.shapes[index] as TextFieldRect).controller.selection =
+        TextSelection(
+            baseOffset: 0,
+            extentOffset: (controller.shapes[index] as TextFieldRect)
+                .controller
+                .value
+                .text
+                .length);
+    (controller.shapes[index] as TextFieldRect).child = MyTextfield(
+      style: TextStyle(
+        fontFamily: rect.fontFamily.getString(),
+        fontSize: rect.fontSize.getSize(),
+        color: rect.textColor,
+      ),
+      node: rect.node!,
+      controller: rect.controller,
+    );
+
+    (controller.shapes[index] as TextFieldRect).node!.requestFocus();
   }
 
   double getFontSize() {
@@ -59,6 +76,14 @@ class SideBarController {
       return 18;
     }
   }
-  
-  getFontFamily() {}
+
+  String getFontFamily() {
+    if (fontStyle == FontFamily.commicShans) {
+      return 'CommicSans';
+    } else if (fontStyle == FontFamily.lillitaOne) {
+      return 'LilitaOne';
+    } else {
+      return 'Nunito';
+    }
+  }
 }

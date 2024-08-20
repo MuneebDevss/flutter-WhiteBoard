@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:white_board/Core/Constants/Color/color_palette.dart';
 import 'package:white_board/Core/Constants/Size/sizes.dart';
@@ -19,8 +20,10 @@ import 'package:white_board/Core/Enitity/my_stack.dart';
 import 'package:white_board/Core/Enitity/shape.dart';
 import 'package:white_board/Feature/MainPage/Controller/main_page_controller.dart';
 import 'package:white_board/Feature/MainPage/Controller/side_bar_controller.dart';
-import 'package:white_board/Feature/MainPage/Presentation/Widgets/selected_shape.dart';
-import 'package:white_board/Feature/MainPage/Presentation/Widgets/side_bar_stroke.dart';
+import 'package:white_board/Feature/MainPage/Presentation/TextFieldBloc/textfield_bloc.dart';
+import 'package:white_board/Feature/MainPage/Presentation/Widgets/my_textfield.dart';
+import 'package:white_board/Feature/MainPage/Presentation/Widgets/selected_tool.dart';
+import 'package:white_board/Feature/MainPage/Presentation/Widgets/selection_rectangle.dart';
 import 'package:white_board/Feature/MainPage/Presentation/Widgets/textfield_side_bar.dart';
 
 class MainPage extends StatefulWidget {
@@ -61,7 +64,9 @@ class MainPageState extends State<MainPage> {
     }
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+      ),
       drawer: const Drawer(),
       body: SizedBox(
         width: double.maxFinite,
@@ -87,16 +92,10 @@ class MainPageState extends State<MainPage> {
                   controller.selectedContainer.length,
                   (index) => GestureDetector(
                     onTap: () async {
-                      if (index == 7) {
-                        controller.pickTheImage(isWeb);
-                      }
-                      setState(() {
-                        controller.selectedContainerIndex == index
-                            ? controller.selectedContainerIndex = -1
-                            : controller.selectedContainerIndex = index;
-                      });
+                      controller.manageToolBarTaps(index, isWeb);
+                      setState(() {});
                     },
-                    child: SelectShape(
+                    child: SelectedTool(
                       screenHeight: screenHeight,
                       button: controller.selectedContainer[index].button,
                       isSelected: controller.selectedContainerIndex == index,
@@ -123,8 +122,13 @@ class MainPageState extends State<MainPage> {
                   child: Stack(
                     children: [
                       GestureDetector(
+                        onTapDown: (event) {
+                          controller.storeTapDownPosition(
+                              event, context, _sideBarController);
+                          setState(() {});
+                        },
                         onPanStart: (event) {
-                          controller.storePointerDownPosition(
+                          controller.storePanDownPosition(
                               event, context, _sideBarController);
                           setState(() {});
                         },
@@ -136,13 +140,31 @@ class MainPageState extends State<MainPage> {
                           controller.managePanEnd(det);
                           setState(() {});
                         },
-                        child: Container(
-                          color: Colors.transparent,
-                          width: screenWidth,
-                          height: screenHeight - Sizes.appBarHeight,
-                          child: Stack(
-                            children: shapeFactory(),
-                          ),
+                        child: BlocBuilder<TextfieldBloc, TextFieldState>(
+                          builder:
+                              (BuildContext context, TextFieldState state) {
+                            if (state is ChangedState) {
+                              //alocate the changes to the text field
+                              controller.convertTextFieldIntoText();
+                              return Container(
+                                color: Colors.transparent,
+                                width: screenWidth,
+                                height: screenHeight - Sizes.appBarHeight,
+                                child: Stack(
+                                  children: shapeFactory(),
+                                ),
+                              );
+                            } else {
+                              return Container(
+                                color: Colors.transparent,
+                                width: screenWidth,
+                                height: screenHeight - Sizes.appBarHeight,
+                                child: Stack(
+                                  children: shapeFactory(),
+                                ),
+                              );
+                            }
+                          },
                         ),
                       ),
                       if ((controller.selectedContainerIndex != 3 ||
@@ -157,13 +179,18 @@ class MainPageState extends State<MainPage> {
                                     ? shapesSideBar(screenWidth)
                                     : selectedShape is TextFieldRect
                                         ? TextFieldSideBar(
-                                            controller: _sideBarController,
+                                            controller: controller,
                                             screenWidth: screenWidth,
+                                            selected: controller.selectedShape,
+                                            sideBarController:
+                                                _sideBarController,
                                           )
                                         : shapesSideBar(screenWidth)
                                 : TextFieldSideBar(
-                                    controller: _sideBarController,
+                                    controller: controller,
                                     screenWidth: screenWidth,
+                                    selected: controller.selectedShape,
+                                    sideBarController: _sideBarController,
                                   )),
                       //zoom
                       zoom(screenWidth, screenHeight),
@@ -226,6 +253,12 @@ class MainPageState extends State<MainPage> {
                   value: controller.selectedShape == -1
                       ? _sideBarController.opacity
                       : selectedShape!.opacity,
+                  onChangeStart: (value) {
+                    controller.stack.add(MyStack(
+                        opacity: value,
+                        shape: controller.getShapeType(selectedShape!),
+                        id: selectedShape!.id));
+                  },
                   onChanged: (val) {
                     if (controller.selectedShape != -1) {
                       controller.shapes[controller.selectedShape].opacity = val;
@@ -248,6 +281,12 @@ class MainPageState extends State<MainPage> {
                 value: controller.selectedShape == -1
                     ? _sideBarController.strokeWidth
                     : selectedShape!.strokeWidth,
+                onChangeStart: (value) {
+                  controller.stack.add(MyStack(
+                      strokeWidth: value,
+                      shape: controller.getShapeType(selectedShape!),
+                      id: selectedShape!.id));
+                },
                 onChanged: (val) {
                   if (controller.selectedShape != -1) {
                     controller.shapes[controller.selectedShape].strokeWidth =
@@ -282,10 +321,9 @@ class MainPageState extends State<MainPage> {
                       } else {
                         _sideBarController.strokeStyle = StrokeStyle.solid;
                       }
-
                       setState(() {});
                     },
-                    child: MyStrokeStyle(
+                    child: MySelectionRectangle(
                       iconData: const Icon(Icons.horizontal_rule),
                       isSelected: selectedShape == null
                           ? _sideBarController.strokeStyle == StrokeStyle.solid
@@ -306,7 +344,7 @@ class MainPageState extends State<MainPage> {
                       }
                       setState(() {});
                     },
-                    child: MyStrokeStyle(
+                    child: MySelectionRectangle(
                       iconData: const Text(
                         ' ---',
                         style: TextStyle(fontSize: Sizes.md),
@@ -556,7 +594,7 @@ class MainPageState extends State<MainPage> {
               width: screenWidth / 25,
               height: screenHeight / 20,
               color: const Color(0xFFECECF4),
-              child: const Center(child: Text('100')),
+              child:  Center(child: Text(controller.currentScale.toString())),
             )),
             InkWell(
                 onTap: () {
@@ -596,7 +634,11 @@ class MainPageState extends State<MainPage> {
           return buildCircle(pos, rB, index, shape);
         }
       } else if (shape is TextFieldRect) {
-        return buildTextField(pos, rB, index, shape);
+        if (shape.child is MyTextfield) {
+          return buildTextField(pos, rB, index, shape);
+        } else {
+          return buildSelectedText(pos, rB, index, shape);
+        }
       } else if (shape is Line) {
         return Transform.translate(
           offset: controller.translation,
@@ -758,36 +800,17 @@ class MainPageState extends State<MainPage> {
 
   Positioned buildTextField(
       Offset pos, Offset rB, int index, TextFieldRect shape) {
-    if (controller.selectedShape == index) {
-      return Positioned.fromRect(
-        rect: Rect.fromPoints(pos, rB),
-        child: GestureDetector(
-          onDoubleTap: () {
-            _sideBarController.manageTextFieldTap(index,shape,controller);
-            setState(() {});
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.blue, width: 2),
-            ),
-            child: IntrinsicWidth(
-              child: shape.child,
-            ),
-          ),
-        ),
-      );
-    } else {
-      return Positioned.fromRect(
-        rect: Rect.fromPoints(pos, rB),
-        child: GestureDetector(
-          onTap: () {
-            controller.manageTap(index, pos);
-            setState(() {});
-          },
-          child: IntrinsicWidth(child: shape.child),
-        ),
-      );
-    }
+    return Positioned(
+      left: pos.dx,
+      top: pos.dy,
+      child: GestureDetector(
+        onTap: () {
+          controller.manageTap(index, pos);
+          setState(() {});
+        },
+        child: IntrinsicWidth(child: shape.child),
+      ),
+    );
   }
 
   Widget buildSelectedRectangle(
@@ -806,6 +829,7 @@ class MainPageState extends State<MainPage> {
           },
           cursor: SystemMouseCursors.click,
           child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
             onTapDown: (TapDownDetails details) {
               controller.manageTap(index, details.localPosition);
               setState(() {});
@@ -813,7 +837,7 @@ class MainPageState extends State<MainPage> {
             child: DottedBorder(
               padding: const EdgeInsets.all(10),
               color: Colors.blue,
-              strokeWidth: shape.strokeWidth - 1 / shape.scale,
+              strokeWidth: 2,
               dashPattern: const [8, 4],
               child: KeyboardListener(
                 focusNode: shape.node!,
@@ -894,7 +918,7 @@ class MainPageState extends State<MainPage> {
             child: DottedBorder(
               padding: const EdgeInsets.all(10),
               color: Colors.blue,
-              strokeWidth: shape.strokeWidth - 1 / shape.scale,
+              strokeWidth: 2,
               dashPattern: const [8, 4],
               child: KeyboardListener(
                 focusNode: shape.node!,
@@ -994,5 +1018,36 @@ class MainPageState extends State<MainPage> {
                 )),
           ],
         ));
+  }
+
+  Widget buildSelectedText(
+      Offset pos, Offset rB, int index, TextFieldRect shape) {
+    return Positioned(
+      left: pos.dx,
+      top: pos.dy,
+      child: Transform.translate(
+        offset: controller.translation,
+        child: GestureDetector(
+          onDoubleTap: () {
+            _sideBarController.manageTextFieldTap(index, shape, controller);
+            setState(() {});
+          },
+          onTap: () {
+            controller.manageTap(index, pos);
+            setState(() {});
+          },
+          child: IntrinsicWidth(
+            child: Container(
+              decoration: BoxDecoration(
+                border: index == controller.selectedShape
+                    ? Border.all(color: Colors.blue, width: 2)
+                    : null,
+              ),
+              child: shape.child,
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

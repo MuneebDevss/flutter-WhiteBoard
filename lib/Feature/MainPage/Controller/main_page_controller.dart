@@ -13,7 +13,7 @@ import 'package:white_board/Core/Enitity/ShapeModels/text_field_rect.dart';
 import 'package:white_board/Core/Enitity/my_stack.dart';
 import 'package:white_board/Core/HelpingFunctions/image_picker.dart';
 import 'package:white_board/Feature/MainPage/Controller/side_bar_controller.dart';
-import 'package:white_board/Feature/MainPage/Presentation/Widgets/selection_container.dart';
+import 'package:white_board/Feature/MainPage/Domain/Entities/tool.dart';
 import 'package:white_board/Feature/MainPage/Presentation/Widgets/my_textfield.dart';
 import '../../../Core/Enitity/shape.dart';
 
@@ -37,32 +37,42 @@ class MainPageController {
   final List<MyStack> stack = [];
   final List<MyStack> redoStack = [];
   final List<Shapes> shapes = [];
-  final List<SelectedContainer> selectedContainer = [
-    SelectedContainer(
-      button: Image.asset('assets/Icon/rectangle.png',fit: BoxFit.contain,),
+  final List<ToolBarItem> selectedContainer = [
+    ToolBarItem(
+      button: Image.asset(
+        'assets/Icon/rectangle.png',
+        fit: BoxFit.contain,
+      ),
     ),
-    SelectedContainer(
+    ToolBarItem(
       button: const Icon(Icons.circle_outlined),
     ),
-    SelectedContainer(
-      button: Image.asset('assets/Icon/arrow.png',fit: BoxFit.contain,),
+    ToolBarItem(
+      button: Image.asset(
+        'assets/Icon/arrow.png',
+        fit: BoxFit.contain,
+      ),
     ),
-    SelectedContainer(
-      button: Image.asset('assets/Icon/grab.png',fit: BoxFit.contain,height: 20,),
+    ToolBarItem(
+      button: Image.asset(
+        'assets/Icon/grab.png',
+        fit: BoxFit.contain,
+        height: 20,
+      ),
     ),
-    SelectedContainer(
+    ToolBarItem(
       button: Image.asset('assets/Icon/textfield.png'),
     ),
-    SelectedContainer(
+    ToolBarItem(
       button: Image.asset('assets/Icon/bursh.png'),
     ),
-    SelectedContainer(
+    ToolBarItem(
       button: const Icon(Iconsax.eraser),
     ),
-    SelectedContainer(
+    ToolBarItem(
       button: Image.asset('assets/Icon/gallery.png'),
     ),
-    SelectedContainer(
+    ToolBarItem(
       button: const Icon(Icons.delete_forever),
     ),
   ];
@@ -97,7 +107,7 @@ class MainPageController {
       }
     } else if (selectedShape != index &&
         (selectedContainerIndex == -1 ||
-            selectedContainerIndex != 3)) //already not selected
+            selectedContainerIndex == 3)) //already not selected
     {
       selectedShape = index;
     } else if (selectedShape == index &&
@@ -116,7 +126,7 @@ class MainPageController {
   //   }
   // }
 
-  void storePointerDownPosition(DragStartDetails offsets, BuildContext context,
+  void storePanDownPosition(DragStartDetails offsets, BuildContext context,
       SideBarController controller) {
     final box = context.findRenderObject() as RenderBox;
     final details = box.globalToLocal(offsets.localPosition) - translation;
@@ -203,26 +213,6 @@ class MainPageController {
         id: id,
         node: FocusNode(),
       );
-      shapes.add(shape);
-      id += 1;
-    } else if (selectedContainerIndex == 4) {
-      Shapes shape = TextFieldRect(
-          scale: currentScale,
-          lT: Offset(details.dx, details.dy),
-          rB: Offset(details.dx + 50, details.dy - 50),
-          stroke: Colors.transparent,
-          strokeStyle: StrokeStyle.dashedBorder,
-          child: MyTextfield(
-            style:  TextStyle(
-                fontSize: controller.getFontSize(),
-                color: controller.textcolor.withOpacity(controller.opacity),
-                fontFamily: controller.getFontFamily(),
-                overflow: TextOverflow.visible),
-            node: FocusNode(),
-          ),
-          id: id,
-          node: FocusNode());
-
       shapes.add(shape);
       id += 1;
     } else if (selectedContainerIndex == 5) {
@@ -342,7 +332,8 @@ class MainPageController {
       Offset lT = shapes[selectedShape].lT;
       Offset rB = shapes[selectedShape].rB;
 
-      if (shapes[selectedShape] is rectangle.Rectangle) {
+      if (shapes[selectedShape] is rectangle.Rectangle ||
+          shapes[selectedShape] is TextFieldRect) {
         //tapped on bottom except corners
         if (lT.dx < position.dx + shapes[selectedShape].rotationAngle &&
             position.dx + shapes[selectedShape].rotationAngle < rB.dx &&
@@ -609,6 +600,10 @@ class MainPageController {
         opacity: shape.opacity,
         stroke: shape.stroke,
         node: shape.node,
+        alignment: shape.alignment,
+        textColor: shape.textColor,
+        fontFamily: shape.fontFamily.getString(),
+        fontSize: shape.fontSize.getSize(),
         strokeStyle: shape.strokeStyle,
         strokeWidth: shape.strokeWidth,
         child: shape.child));
@@ -686,6 +681,10 @@ class MainPageController {
         opacity: shape.opacity,
         stroke: shape.stroke,
         node: shape.node,
+        alignment: shape.alignment,
+        textColor: shape.textColor,
+        fontFamily: shape.fontFamily.getString(),
+        fontSize: shape.fontSize.getSize(),
         strokeStyle: shape.strokeStyle,
         strokeWidth: shape.strokeWidth,
         child: shape.child));
@@ -1039,6 +1038,10 @@ class MainPageController {
       rotationAngle: stack[stackLength].rotationAngle!,
       child: stack[stackLength].child,
       opacity: stack[stackLength].opacity!,
+      fontSize: stack[stackLength].fontSize!.getFontSize(),
+      fontFamily: stack[stackLength].fontFamily!.getFontFamily(),
+      textColor: stack[stackLength].textColor!,
+      alignment: stack[stackLength].alignment!,
     ));
   }
 
@@ -1099,16 +1102,19 @@ class MainPageController {
 
   TextFieldRect undoTextField(int shapesLength, int stackLength) {
     return (shapes[shapesLength] as TextFieldRect).copyWith(
-      child: (stack[stackLength]).child,
-      stroke: stack[stackLength].stroke,
-      strokeStyle: stack[stackLength].strokeStyle,
-      strokeWidth: stack[stackLength].strokeWidth,
-      lT: stack[stackLength].lT,
-      rB: stack[stackLength].rB,
-      rotationAngle: stack[stackLength].rotationAngle,
-      node: stack[stackLength].node,
-      opacity: stack[stackLength].opacity,
-    );
+        child: (stack[stackLength]).child,
+        stroke: stack[stackLength].stroke,
+        strokeStyle: stack[stackLength].strokeStyle,
+        strokeWidth: stack[stackLength].strokeWidth,
+        lT: stack[stackLength].lT,
+        rB: stack[stackLength].rB,
+        rotationAngle: stack[stackLength].rotationAngle,
+        node: stack[stackLength].node,
+        opacity: stack[stackLength].opacity,
+        textColor: stack[stackLength].textColor,
+        alignment: stack[stackLength].alignment,
+        fontFamily: stack[stackLength].fontFamily!.getFontFamily(),
+        fontSize: stack[stackLength].fontSize!.getFontSize());
   }
 
   Brush undoBrush(int shapesLength, int stackLength) {
@@ -1191,17 +1197,20 @@ class MainPageController {
 
   void redoDeletedTextField(int redoStackLength) {
     return shapes.add(TextFieldRect(
-      lT: redoStack[redoStackLength].lT!,
-      rB: redoStack[redoStackLength].rB!,
-      stroke: redoStack[redoStackLength].stroke!,
-      strokeStyle: redoStack[redoStackLength].strokeStyle!,
-      strokeWidth: redoStack[redoStackLength].strokeWidth!,
-      id: redoStack[redoStackLength].id,
-      node: redoStack[redoStackLength].node,
-      rotationAngle: redoStack[redoStackLength].rotationAngle!,
-      child: redoStack[redoStackLength].child,
-      opacity: redoStack[redoStackLength].opacity!,
-    ));
+        lT: redoStack[redoStackLength].lT!,
+        rB: redoStack[redoStackLength].rB!,
+        stroke: redoStack[redoStackLength].stroke!,
+        strokeStyle: redoStack[redoStackLength].strokeStyle!,
+        strokeWidth: redoStack[redoStackLength].strokeWidth!,
+        id: redoStack[redoStackLength].id,
+        node: redoStack[redoStackLength].node,
+        rotationAngle: redoStack[redoStackLength].rotationAngle!,
+        child: redoStack[redoStackLength].child,
+        opacity: redoStack[redoStackLength].opacity!,
+        fontFamily: redoStack[redoStackLength].fontFamily!.getFontFamily(),
+        fontSize: redoStack[redoStackLength].fontSize!.getFontSize(),
+        textColor: redoStack[redoStackLength].textColor!,
+        alignment: redoStack[redoStackLength].alignment!));
   }
 
   void redoDeletedBrush(int redoStackLength) {
@@ -1261,16 +1270,19 @@ class MainPageController {
 
   TextFieldRect redoTextField(int shapesLength, int redoStackLength) {
     return (shapes[shapesLength] as TextFieldRect).copyWith(
-      child: (redoStack[redoStackLength]).child,
-      stroke: redoStack[redoStackLength].stroke,
-      strokeStyle: redoStack[redoStackLength].strokeStyle,
-      strokeWidth: redoStack[redoStackLength].strokeWidth,
-      lT: redoStack[redoStackLength].lT,
-      rB: redoStack[redoStackLength].rB,
-      rotationAngle: redoStack[redoStackLength].rotationAngle,
-      node: redoStack[redoStackLength].node,
-      opacity: redoStack[redoStackLength].opacity,
-    );
+        child: (redoStack[redoStackLength]).child,
+        stroke: redoStack[redoStackLength].stroke,
+        strokeStyle: redoStack[redoStackLength].strokeStyle,
+        strokeWidth: redoStack[redoStackLength].strokeWidth,
+        lT: redoStack[redoStackLength].lT,
+        rB: redoStack[redoStackLength].rB,
+        rotationAngle: redoStack[redoStackLength].rotationAngle,
+        node: redoStack[redoStackLength].node,
+        opacity: redoStack[redoStackLength].opacity,
+        textColor: redoStack[redoStackLength].textColor,
+        alignment: redoStack[redoStackLength].alignment,
+        fontFamily: redoStack[redoStackLength].fontFamily!.getFontFamily(),
+        fontSize: redoStack[redoStackLength].fontSize!.getFontSize());
   }
 
   Brush redoBrush(int shapesLength, int redoStackLength) {
@@ -1337,7 +1349,7 @@ class MainPageController {
     grabingLine = false;
     isDrawing = false;
     //Brush selected
-    if (selectedContainerIndex != 5) {
+    if (selectedContainerIndex != 5&&selectedContainerIndex!=3) {
       if (shapes.isNotEmpty && selectedShape != -1) {
         //just clicked didn't drag while making the shape
         if (shapes[selectedShape].lT.dx - shapes[selectedShape].rB.dx == 0 ||
@@ -1374,5 +1386,81 @@ class MainPageController {
     }
   }
 
-  
+  void storeTapDownPosition(TapDownDetails event, BuildContext context,
+      SideBarController controller) {
+    Offset details = event.localPosition;
+
+    convertTextFieldIntoText();
+    if (selectedContainerIndex == 4) {
+      TextFieldRect shape = TextFieldRect(
+        scale: currentScale,
+        lT: Offset(details.dx, details.dy),
+        rB: Offset(details.dx + 50, details.dy - 50),
+        stroke: Colors.transparent,
+        strokeStyle: StrokeStyle.dashedBorder,
+        id: id,
+        node: FocusNode(),
+        fontSize: controller.fontSize,
+        textColor: controller.textcolor,
+        fontFamily: controller.fontStyle,
+        alignment: controller.alignment,
+      );
+      (shape).child = MyTextfield(
+        style: TextStyle(
+            fontSize: controller.getFontSize(),
+            color: controller.textcolor.withOpacity(controller.opacity),
+            fontFamily: controller.getFontFamily(),
+            overflow: TextOverflow.visible),
+        node: FocusNode(),
+        controller: (shape).controller,
+      );
+      shapes.add(shape);
+      id += 1;
+      selectedContainerIndex = -1;
+      selectedShape = shapes.length - 1;
+    } else {
+      selectedShape = -1;
+    }
+  }
+
+  //so that the text would be grabable
+  void convertTextFieldIntoText() {
+    if (selectedShape != -1) {
+      if (shapes[selectedShape] is TextFieldRect) {
+        if ((shapes[selectedShape] as TextFieldRect)
+            .controller
+            .text
+            .trim()
+            .isNotEmpty) {
+          TextFieldRect rect = (shapes[selectedShape] as TextFieldRect);
+          rect.node!.unfocus();
+          (shapes[selectedShape] as TextFieldRect).child = Text(
+            rect.controller.text,
+            textAlign: rect.alignment.textAlign,
+            style: TextStyle(
+                color: rect.textColor.withOpacity(rect.opacity),
+                fontFamily: rect.fontFamily.getString(),
+                fontSize: rect.fontSize.getSize()),
+          );
+        } else {
+          //remvoe the textField if not written anything in it
+          shapes.removeAt(selectedShape);
+          selectedShape = -1;
+        }
+      }
+    }
+  }
+
+  void manageToolBarTaps(int index, isWeb) {
+    if (index == 7) {
+      pickTheImage(isWeb);
+    } else if (index == 4) {
+      selectedShape = -1;
+    }
+    convertTextFieldIntoText();
+
+    selectedContainerIndex == index
+        ? selectedContainerIndex = -1
+        : selectedContainerIndex = index;
+  }
 }

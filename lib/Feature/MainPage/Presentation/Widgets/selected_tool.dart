@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class SelectShape extends StatelessWidget {
-  const SelectShape({
+class SelectedTool extends StatelessWidget {
+  const SelectedTool({
     super.key,
     required this.screenHeight,
     required this.button,
