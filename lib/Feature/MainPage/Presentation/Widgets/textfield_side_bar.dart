@@ -186,7 +186,7 @@ class _TextFieldSideBarState extends State<TextFieldSideBar> {
                           iconData: Image.asset('assets/Icon/Nunito.png'),
                           isSelected: widget.controller.selectedShape != -1
                               ? FontFamily.nunnito ==
-                                  (widget.controller.shapes[widget.controller.selectedShape]! as TextFieldRect).fontFamily
+                                  (widget.controller.shapes[widget.controller.selectedShape] as TextFieldRect).fontFamily
                               : FontFamily.nunnito ==
                                   widget.sideBarController.fontStyle,
                         )),
@@ -224,7 +224,7 @@ class _TextFieldSideBarState extends State<TextFieldSideBar> {
                           iconData: Image.asset('assets/Icon/Small.png'),
                           isSelected: widget.controller.selectedShape != -1
                               ? FontSize.s ==
-                                  (widget.controller.shapes[widget.controller.selectedShape]! as TextFieldRect).fontSize
+                                  (widget.controller.shapes[widget.controller.selectedShape] as TextFieldRect).fontSize
                               : FontSize.s == widget.sideBarController.fontSize,
                         )),
                     InkWell(
@@ -246,7 +246,7 @@ class _TextFieldSideBarState extends State<TextFieldSideBar> {
                           iconData: Image.asset('assets/Icon/Medium.png'),
                           isSelected: widget.controller.selectedShape != -1
                               ? FontSize.m ==
-                                  (widget.controller.shapes[widget.controller.selectedShape]! as TextFieldRect).fontSize
+                                  (widget.controller.shapes[widget.controller.selectedShape] as TextFieldRect).fontSize
                               : FontSize.m == widget.sideBarController.fontSize,
                         )),
                     InkWell(
@@ -268,7 +268,7 @@ class _TextFieldSideBarState extends State<TextFieldSideBar> {
                           iconData: Image.asset('assets/Icon/Large.png'),
                           isSelected: widget.controller.selectedShape != -1
                               ? FontSize.l ==
-                                  (widget.controller.shapes[widget.controller.selectedShape]! as TextFieldRect).fontSize
+                                  (widget.controller.shapes[widget.controller.selectedShape] as TextFieldRect).fontSize
                               : FontSize.l == widget.sideBarController.fontSize,
                         )),
                     InkWell(
@@ -290,7 +290,7 @@ class _TextFieldSideBarState extends State<TextFieldSideBar> {
                           iconData: Image.asset('assets/Icon/XLarge.png'),
                           isSelected: widget.controller.selectedShape != -1
                               ? FontSize.xL ==
-                                  (widget.controller.shapes[widget.controller.selectedShape]! as TextFieldRect).fontSize
+                                  (widget.controller.shapes[widget.controller.selectedShape] as TextFieldRect).fontSize
                               : FontSize.xL ==
                                   widget.sideBarController.fontSize,
                         )),
@@ -329,7 +329,7 @@ class _TextFieldSideBarState extends State<TextFieldSideBar> {
                           iconData: Image.asset('assets/Icon/LeftAlign.png'),
                           isSelected: widget.controller.selectedShape != -1
                               ? TextAlignment.left ==
-                                  (widget.controller.shapes[widget.controller.selectedShape]! as TextFieldRect).alignment
+                                  (widget.controller.shapes[widget.controller.selectedShape] as TextFieldRect).alignment
                               : TextAlignment.left ==
                                   widget.sideBarController.alignment,
                         )),
@@ -353,7 +353,7 @@ class _TextFieldSideBarState extends State<TextFieldSideBar> {
                           iconData: Image.asset('assets/Icon/CenterAlign.png'),
                           isSelected: widget.controller.selectedShape != -1
                               ? TextAlignment.center ==
-                                  (widget.controller.shapes[widget.controller.selectedShape]! as TextFieldRect).alignment
+                                  (widget.controller.shapes[widget.controller.selectedShape] as TextFieldRect).alignment
                               : TextAlignment.center ==
                                   widget.sideBarController.alignment,
                         )),
@@ -377,7 +377,7 @@ class _TextFieldSideBarState extends State<TextFieldSideBar> {
                           iconData: Image.asset('assets/Icon/RightAlign.png'),
                           isSelected: widget.controller.selectedShape != -1
                               ? TextAlignment.right ==
-                                  (widget.controller.shapes[widget.controller.selectedShape]! as TextFieldRect).alignment
+                                  (widget.controller.shapes[widget.controller.selectedShape] as TextFieldRect).alignment
                               : TextAlignment.right ==
                                   widget.sideBarController.alignment,
                         )),
@@ -475,7 +475,7 @@ class _TextFieldSideBarState extends State<TextFieldSideBar> {
                   
                     if (widget.controller.shapes[widget.controller.selectedShape] is TextFieldRect) {
                       final MyStack stack = MyStack(
-                          id: widget.controller.shapes[widget.controller.selectedShape]!.id,
+                          id: widget.controller.shapes[widget.controller.selectedShape].id,
                           textColor: (widget.controller.shapes[widget.controller.selectedShape] as TextFieldRect).textColor,
                           shape: ShapeTypes.circle);
                       widget.controller.stack.add(stack);
@@ -497,7 +497,7 @@ class _TextFieldSideBarState extends State<TextFieldSideBar> {
                     border: Border.all(
                         color: widget.controller.selectedShape != -1
                             ? constantColor ==
-                                    (widget.controller.shapes[widget.controller.selectedShape]! as TextFieldRect).textColor
+                                    (widget.controller.shapes[widget.controller.selectedShape] as TextFieldRect).textColor
                                 ? constantColor
                                 : Colors.transparent
                             : constantColor ==
@@ -521,7 +521,7 @@ class _TextFieldSideBarState extends State<TextFieldSideBar> {
                   {
                     if (widget.controller.shapes[widget.controller.selectedShape] is TextFieldRect) {
                       final MyStack stack = MyStack(
-                          id: widget.controller.shapes[widget.controller.selectedShape]!.id,
+                          id: widget.controller.shapes[widget.controller.selectedShape].id,
                           textColor: (widget.controller.shapes[widget.controller.selectedShape] as TextFieldRect).textColor,
                           shape: ShapeTypes.circle);
                       widget.controller.stack.add(stack);
