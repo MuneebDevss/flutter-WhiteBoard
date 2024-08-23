@@ -5,7 +5,9 @@ class TextFieldEvent {}
 class InitialEvent extends TextFieldEvent {}
 
 class ChangeEvent extends TextFieldEvent {
-  
+  final VoidCallback func;
+
+  ChangeEvent({required this.func});
 }
 
 class TextColorChangedEvent extends TextFieldEvent {

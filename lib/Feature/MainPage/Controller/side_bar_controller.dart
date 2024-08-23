@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:white_board/Core/Constants/enum.dart';
 import 'package:white_board/Core/Enitity/ShapeModels/text_field_rect.dart';
+import 'package:white_board/Core/Enitity/shape.dart';
 import 'package:white_board/Feature/MainPage/Controller/main_page_controller.dart';
 import 'package:white_board/Feature/MainPage/Presentation/Widgets/my_textfield.dart';
 
@@ -85,5 +86,71 @@ class SideBarController {
     } else {
       return 'Nunito';
     }
+  }
+
+  List<Shapes> moveToBottom(
+      List<Shapes> shapes, int selectedShape, MainPageController controller) {
+    if (selectedShape != -1) {
+      List<Shapes> newShapes = [];
+      newShapes.add(shapes[selectedShape]);
+      for (int x = 0; x < shapes.length; x++) {
+        if (x != selectedShape) {
+          newShapes.add(shapes[x]);
+        }
+      }
+      controller.shapes.clear();
+      controller.selectedShape = 0;
+      return newShapes;
+    }
+    return shapes;
+  }
+
+  List<Shapes> moveDownOneLayer(
+      List<Shapes> shapes, int selectedShape, MainPageController controller) {
+    if (selectedShape != -1) {
+      if (selectedShape - 1 >= 0) {
+        Shapes previousShape = shapes[selectedShape - 1];
+
+        shapes[selectedShape - 1] = shapes[selectedShape];
+
+        shapes[selectedShape] = previousShape;
+
+        controller.selectedShape = selectedShape - 1;
+      }
+    }
+    return shapes;
+  }
+
+  List<Shapes> moveToTop(
+      List<Shapes> shapes, int selectedShape, MainPageController controller) {
+    if (selectedShape != -1) {
+      List<Shapes> newShapes = [];
+      for (int x = 0; x < shapes.length; x++) {
+        if (x != selectedShape) {
+          newShapes.add(shapes[x]);
+        }
+      }
+      newShapes.add(shapes[selectedShape]);
+      controller.shapes.clear();
+      controller.selectedShape = newShapes.length - 1;
+      return newShapes;
+    }
+    return shapes;
+  }
+
+  List<Shapes> moveUpOneLayer(
+      List<Shapes> shapes, int selectedShape, MainPageController controller) {
+    if (selectedShape != -1) {
+      if (selectedShape + 1 < (shapes.length)) {
+        Shapes previousShape = shapes[selectedShape + 1];
+
+        shapes[selectedShape + 1] = shapes[selectedShape];
+
+        shapes[selectedShape] = previousShape;
+
+        controller.selectedShape = selectedShape + 1;
+      }
+    }
+    return shapes;
   }
 }

@@ -4,8 +4,11 @@ import 'package:white_board/Core/Enitity/shape.dart';
 
 class Line extends Shapes {
   Offset? curve;
+  bool hasArrowEnd;
   Line(
-      {super.strokeWidth = 4,
+      {
+        this.hasArrowEnd=false,
+        super.strokeWidth = 4,
       super.stroke,
       super.opacity,
       super.strokeStyle,

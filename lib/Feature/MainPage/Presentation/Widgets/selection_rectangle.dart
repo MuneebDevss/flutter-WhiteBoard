@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class MySelectionRectangle extends StatelessWidget {
-  const MySelectionRectangle(
+  const MySelectionRectangle(  
       {super.key, required this.iconData, required this.isSelected});
   final Widget iconData;
   final bool isSelected;
@@ -9,8 +9,8 @@ class MySelectionRectangle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      width: 25,
-      height: 25,
+      width: 30,
+      height: 30,
       decoration: BoxDecoration(
           color: isSelected ? Colors.blue : null,
           borderRadius: BorderRadius.circular(5),

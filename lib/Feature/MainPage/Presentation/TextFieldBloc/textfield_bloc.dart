@@ -44,7 +44,8 @@ class TextfieldBloc extends Bloc<TextFieldEvent, TextFieldState> {
 
   FutureOr<void> _handleChangeEvent(
       ChangeEvent event, Emitter<TextFieldState> emit) {
-    
+    //alocate the changes to the text field
+    event.func();
     emit(ChangedState());
   }
 }

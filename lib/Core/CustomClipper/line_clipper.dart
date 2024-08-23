@@ -2,17 +2,27 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:white_board/Core/HelpingFunctions/dash_path.dart';
+import 'package:white_board/Feature/MainPage/Controller/main_page_controller.dart';
+import 'package:arrow_path/arrow_path.dart';
 
 class LinePainter extends CustomPainter {
   Offset startPosition;
   Offset? curvePoint;
   final Offset endPosition;
+  final MainPageController controller;
   final Color stroke;
   final double strokeWidth, opacity;
   final bool isGrabAble;
   final bool isDashed;
+  final int index;
+  final BuildContext context;
+  final bool hasArrowEnd;
   LinePainter(
-      {required this.stroke,
+      {required this.hasArrowEnd,
+      required this.context,
+      required this.index,
+      required this.controller,
+      required this.stroke,
       this.curvePoint,
       required this.isDashed,
       required this.strokeWidth,
@@ -27,20 +37,24 @@ class LinePainter extends CustomPainter {
       ..color = stroke.withOpacity(opacity)
       ..strokeWidth = strokeWidth
       ..style = PaintingStyle.stroke;
-    final curvedPoint=curvePoint??(startPosition + endPosition) / 2;
-    final Path linePath = Path();
+    final curvedPoint = curvePoint ?? (startPosition + endPosition) / 2;
+     Path linePath = Path();
     linePath.moveTo(startPosition.dx, startPosition.dy);
-    linePath.quadraticBezierTo(curvedPoint.dx,curvedPoint.dy,endPosition.dx, endPosition.dy);
+    linePath.quadraticBezierTo(
+        curvedPoint.dx, curvedPoint.dy, endPosition.dx, endPosition.dy);
+    
     if (!isDashed) {
+      linePath=ArrowPath.addTip(linePath);
       canvas.drawPath(linePath, paint);
     } else {
       PathMetrics matrices = linePath.computeMetrics();
       double distance = matrices.first.length;
-      final newPath = dashPath(linePath,
+       Path newPath = dashPath(linePath,
           dashArray: CircularIntervalList([distance / 10, distance / 10]));
+          newPath=ArrowPath.addTip(newPath);
       canvas.drawPath(newPath, paint);
     }
-    
+
     if (isGrabAble) {
       Offset midpoint = curvedPoint;
       Offset midpoint2 = (startPosition);
