@@ -40,30 +40,30 @@ class SideBarController {
     this.opacity = 1,
   });
 
-  void manageTextFieldTap(
+  void convertTextToTextField(
       int index, TextFieldRect rect, MainPageController controller) {
     //to make sure it is selected in order to convert it into the text from the textfield
     controller.selectedShape = index;
     //select all the text
-    (controller.shapes[index] as TextFieldRect).controller.selection =
-        TextSelection(
-            baseOffset: 0,
-            extentOffset: (controller.shapes[index] as TextFieldRect)
-                .controller
-                .value
-                .text
-                .length);
+    // (controller.shapes[index] as TextFieldRect).controller.selection =
+    //     TextSelection(
+    //         baseOffset: 0,
+    //         extentOffset: (controller.shapes[index] as TextFieldRect)
+    //             .controller
+    //             .value
+    //             .text
+    //             .length);
     (controller.shapes[index] as TextFieldRect).child = MyTextfield(
       style: TextStyle(
         fontFamily: rect.fontFamily.getString(),
         fontSize: rect.fontSize.getSize(),
         color: rect.textColor,
       ),
-      node: rect.node!,
+      node: FocusNode(),
       controller: rect.controller,
+      convertTextFieldToText: controller.convertTextFieldIntoText,
     );
-
-    (controller.shapes[index] as TextFieldRect).node!.requestFocus();
+    
   }
 
   double getFontSize() {

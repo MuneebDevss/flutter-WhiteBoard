@@ -5,6 +5,7 @@ import 'package:white_board/Feature/MainPage/Presentation/main_page.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+
   runApp(
   MultiBlocProvider(providers: [BlocProvider(create: (context)=>TextfieldBloc())], child: const MyApp()));
   }
@@ -16,6 +17,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     WidgetsFlutterBinding.ensureInitialized();
     return const MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: MainPage(),
     );
   }

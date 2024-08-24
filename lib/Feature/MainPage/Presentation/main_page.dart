@@ -97,8 +97,9 @@ class MainPageState extends State<MainPage> with TickerProviderStateMixin {
                     child: const Text('Export PNG'),
                     onPressed: () async {
                       Uint8List? pngBytes = await controller.getBytes(context);
-                      if (pngBytes != null)
+                      if (pngBytes != null) {
                         controller.saveFile(pngBytes, 'png', isWeb);
+                      }
                     },
                   ),
                 ),
@@ -108,8 +109,9 @@ class MainPageState extends State<MainPage> with TickerProviderStateMixin {
                     child: const Text('Export JPEG'),
                     onPressed: () async {
                       Uint8List? pngBytes = await controller.getBytes(context);
-                      if (pngBytes != null)
+                      if (pngBytes != null) {
                         controller.saveFile(pngBytes, 'jpeg', isWeb);
+                      }
                     },
                   ),
                 ),
@@ -162,7 +164,14 @@ class MainPageState extends State<MainPage> with TickerProviderStateMixin {
                       },
                       child: BlocBuilder<TextfieldBloc, TextFieldState>(
                         builder: (BuildContext context, TextFieldState state) {
+                          if (state is LoadingState) {
+                            return const CircularProgressIndicator();
+                          }
                           if (state is ChangedState) {
+                            if (controller.selectedShape != -1) {
+                              controller.shapes[controller.selectedShape].node!
+                                  .requestFocus();
+                            }
                             return Screenshot(
                               controller: controller.screenShotController,
                               child: Transform.scale(
@@ -196,8 +205,7 @@ class MainPageState extends State<MainPage> with TickerProviderStateMixin {
                         },
                       ),
                     ),
-                    if ((controller.selectedContainerIndex != 3 ||
-                            controller.selectedShape == -1) &&
+                    if (
                         !controller
                             .isDrawing) //do not show while grabing or reshaping
                       Positioned(
@@ -815,22 +823,30 @@ class MainPageState extends State<MainPage> with TickerProviderStateMixin {
           return buildSelectedText(pos, rB, index, shape);
         }
       } else if (shape is Line) {
-        return Transform.translate(
-          offset: controller.translation,
-          child: CustomPaint(
-            painter: LinePainter(
-                endPosition: rB,
-                startPosition: pos,
-                stroke: shape.stroke,
-                strokeWidth: shape.strokeWidth - 1 / shape.scale,
-                curvePoint: shape.curve,
-                isGrabAble: controller.selectedShape == index,
-                opacity: shape.opacity,
-                isDashed: shape.strokeStyle == StrokeStyle.dashedBorder,
-                context: context,
-                controller: controller,
-                index: index,
-                hasArrowEnd: shape.hasArrowEnd),
+        return KeyboardListener(
+          focusNode: shape.node!,
+          onKeyEvent: (event) {
+            shape.node!.requestFocus();
+            if (event is KeyDownEvent) controller.handleKeyEvents(event);
+            setState(() {});
+          },
+          child: Transform.translate(
+            offset: controller.translation,
+            child: CustomPaint(
+              painter: LinePainter(
+                  endPosition: rB,
+                  startPosition: pos,
+                  stroke: shape.stroke,
+                  strokeWidth: shape.strokeWidth - 1 / shape.scale,
+                  curvePoint: shape.curve,
+                  isGrabAble: controller.selectedShape == index,
+                  opacity: shape.opacity,
+                  isDashed: shape.strokeStyle == StrokeStyle.dashedBorder,
+                  context: context,
+                  controller: controller,
+                  index: index,
+                  hasArrowEnd: shape.hasArrowEnd),
+            ),
           ),
         );
       } else if (shape is Brush) {
@@ -983,12 +999,15 @@ class MainPageState extends State<MainPage> with TickerProviderStateMixin {
     return Positioned(
       left: pos.dx,
       top: pos.dy,
-      child: GestureDetector(
-        onTap: () {
-          controller.manageTap(index, pos);
-          setState(() {});
-        },
-        child: IntrinsicWidth(child: shape.child),
+      child: Transform.translate(
+        offset: controller.translation,
+        child: GestureDetector(
+          onTap: () {
+            controller.manageTap(index, pos);
+            setState(() {});
+          },
+          child: IntrinsicWidth(child: shape.child),
+        ),
       ),
     );
   }
@@ -1204,23 +1223,28 @@ class MainPageState extends State<MainPage> with TickerProviderStateMixin {
     return Positioned(
       left: pos.dx,
       top: pos.dy,
-      child: Transform.translate(
-        offset: controller.translation,
-        child: GestureDetector(
-          onDoubleTap: () {
-            _sideBarController.manageTextFieldTap(index, shape, controller);
-            setState(() {});
-          },
-          onTap: () {
-            controller.manageTap(index, pos);
-            setState(() {});
-          },
-          child: IntrinsicWidth(
+      child: KeyboardListener(
+        focusNode: shape.node!,
+        onKeyEvent: (event) {
+          if (event is KeyDownEvent) {
+            controller.handleKeyEvents(event,
+                func: () => _sideBarController.convertTextToTextField(
+                    index, shape, controller));
+          }
+          setState(() {});
+        },
+        child: Transform(
+          alignment: Alignment.topLeft,
+          transform: Matrix4.translationValues(
+              controller.translation.dx, controller.translation.dy, 0.0),
+          transformHitTests: true,
+          child: MouseRegion(
+            cursor: SystemMouseCursors.grab,
             child: Container(
               decoration: BoxDecoration(
                 border: index == controller.selectedShape
                     ? Border.all(color: Colors.blue, width: 2)
-                    : null,
+                    : Border.all(color: Colors.transparent, width: 2),
               ),
               child: shape.child,
             ),

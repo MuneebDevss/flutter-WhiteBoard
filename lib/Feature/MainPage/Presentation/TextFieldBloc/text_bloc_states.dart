@@ -4,9 +4,9 @@ class TextFieldState {}
 
 class InitialState extends TextFieldState {}
 
-class ChangedState extends TextFieldState {
-  
-}
+class ChangedState extends TextFieldState {}
+
+class LoadingState extends TextFieldState {}
 
 class TextColorChangedState extends TextFieldState {
   final Color color;

@@ -41,7 +41,7 @@ class TextfieldBloc extends Bloc<TextFieldEvent, TextFieldState> {
       TextAlignmentChangedEvent event, Emitter<TextFieldState> emit) {
     emit(FontAlignmentChangedState(alignment: event.alignment));
   }
-
+  
   FutureOr<void> _handleChangeEvent(
       ChangeEvent event, Emitter<TextFieldState> emit) {
     //alocate the changes to the text field

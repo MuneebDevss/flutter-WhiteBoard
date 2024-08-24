@@ -116,9 +116,16 @@ class MainPageController {
       }
     } else if (selectedShape != index &&
         (selectedContainerIndex == -1 ||
-            selectedContainerIndex == 3)) //already not selected
+            selectedContainerIndex ==
+                3)) //already not selected and no tool/grab is selected
     {
       selectedShape = index;
+      selectedContainerIndex = 3;
+      for (int x = 0; x < shapes.length; x++) {
+        if (shapes[x] is TextFieldRect) {
+          detectTextField(details, x);
+        }
+      }
     } else if (selectedShape == index &&
         (selectedContainerIndex == -1 || selectedContainerIndex != 3)) {
       selectedShape = -1;
@@ -793,20 +800,20 @@ class MainPageController {
     }
   }
 
-  void handleKeyEvents(KeyDownEvent event) {
-    if (event.logicalKey == LogicalKeyboardKey.control) {
-      controlPressed = true;
-    } else if (event.logicalKey == LogicalKeyboardKey.keyD) {
+  void handleKeyEvents(KeyDownEvent event, {Function? func}) {
+    if (event.logicalKey == LogicalKeyboardKey.keyD) {
       if (selectedShape != -1) {
-        Shapes shape = shapes[selectedShape];
-        shape.rB = Offset(shape.rB.dx + 20, shape.rB.dy);
-        shape.lT = Offset(shape.lT.dx + 20, shape.lT.dy);
-        shapes.add(shape);
+        duplicateShape();
         selectedShape = shapes.length - 1;
-        controlPressed = false;
       }
-    }
-    if (event.logicalKey == LogicalKeyboardKey.shiftRight ||
+    } else if (event.logicalKey == LogicalKeyboardKey.enter) {
+      if (func != null) {
+        func();
+      } else if (event.logicalKey == LogicalKeyboardKey.keyZ) {
+        print('w');
+        undo();
+      }
+    } else if (event.logicalKey == LogicalKeyboardKey.shiftRight ||
         event.logicalKey == LogicalKeyboardKey.shiftLeft && !shiftPressed) {
       shiftPressed = true;
     } else if (shiftPressed &&
@@ -1374,6 +1381,9 @@ class MainPageController {
               selectedShape = -1;
             } else if (selectedShape != x) {
               selectedShape = x;
+              shapes[x].node!.requestFocus();
+            } else {
+              selectedShape = -1;
             }
             return; // Point found on the straight line
           }
@@ -1410,17 +1420,43 @@ class MainPageController {
             } else if (selectedContainerIndex == 8) {
               shapes.removeAt(x);
               selectedShape = -1;
+            } else {
+              selectedShape = -1;
             }
             return; // Point found near the curve
           }
         }
+      } else if (shapes[x] is TextFieldRect) {
+        detectTextField(point, x);
       }
     }
-    if (selectedShape != -1) {
-      if (selectedContainerIndex != 3 &&
-          shapes[selectedShape] is! TextFieldRect) {
-        selectedShape = -1;
-      }
+  }
+
+  void detectTextField(Offset point, int x) {
+    point -= translation;
+    if (point.dx > shapes[x].lT.dx &&
+        point.dx < shapes[x].rB.dx &&
+        point.dy > shapes[x].lT.dy &&
+        point.dy < shapes[x].rB.dy &&
+        x == selectedShape &&
+        selectedContainerIndex != 3) {
+      TextFieldRect rect = (shapes[x] as TextFieldRect);
+      rect.child = MyTextfield(
+        style: TextStyle(
+          fontFamily: rect.fontFamily.getString(),
+          fontSize: rect.fontSize.getSize(),
+          color: rect.textColor,
+        ),
+        node: FocusNode(),
+        controller: rect.controller,
+        convertTextFieldToText: convertTextFieldIntoText,
+      );
+    } else if (point.dx > shapes[x].lT.dx &&
+        point.dx < shapes[x].rB.dx &&
+        point.dy > shapes[x].lT.dy &&
+        point.dy < shapes[x].rB.dy) {
+      selectedShape = x;
+      shapes[x].node!.requestFocus();
     }
   }
 
@@ -1432,8 +1468,8 @@ class MainPageController {
     if (selectedContainerIndex == 4) {
       TextFieldRect shape = TextFieldRect(
         scale: currentScale,
-        lT: Offset(details.dx, details.dy),
-        rB: Offset(details.dx + 50, details.dy - 50),
+        lT: details - translation,
+        rB: Offset(details.dx + 50, details.dy + 50) - translation,
         stroke: Colors.transparent,
         strokeStyle: StrokeStyle.dashedBorder,
         id: id,
@@ -1451,6 +1487,7 @@ class MainPageController {
             overflow: TextOverflow.visible),
         node: FocusNode(),
         controller: (shape).controller,
+        convertTextFieldToText: convertTextFieldIntoText,
       );
       shapes.add(shape);
       id += 1;
@@ -1470,7 +1507,7 @@ class MainPageController {
             .trim()
             .isNotEmpty) {
           TextFieldRect rect = (shapes[selectedShape] as TextFieldRect);
-          rect.node!.unfocus();
+
           (shapes[selectedShape] as TextFieldRect).child = Text(
             rect.controller.text,
             textAlign: rect.alignment.textAlign,
@@ -1479,6 +1516,7 @@ class MainPageController {
                 fontFamily: rect.fontFamily.getString(),
                 fontSize: rect.fontSize.getSize()),
           );
+          rect.node!.unfocus();
         } else {
           //remvoe the textField if not written anything in it
           shapes.removeAt(selectedShape);
@@ -1535,5 +1573,84 @@ class MainPageController {
     image = await screenShotController.capture(
         pixelRatio: MediaQuery.of(context).devicePixelRatio);
     return image;
+  }
+
+  void duplicateShape() {
+    Shapes shape = shapes[selectedShape];
+    if (shape is rectangle.Rectangle) {
+      Shapes duplicate = rectangle.Rectangle(
+        lT: shape.lT + const Offset(20, 20),
+        scale: shape.scale,
+        rB: shape.rB + const Offset(20, 20),
+        stroke: shape.stroke,
+        strokeStyle: shape.strokeStyle,
+        strokeWidth: shape.strokeWidth,
+        rotationAngle: shape.rotationAngle,
+        backgroundColor: shape.backgroundColor,
+        id: id,
+        opacity: shape.opacity,
+        node: FocusNode(),
+      );
+      shapes.add(duplicate);
+    } else if (shape is Circle) {
+      Shapes duplicate = Circle(
+        lT: shape.lT + const Offset(20, 20),
+        scale: shape.scale,
+        rotationAngle: shape.rotationAngle,
+        borderRadius: shape.borderRadius,
+        rB: shape.rB + const Offset(20, 20),
+        stroke: shape.stroke,
+        strokeStyle: shape.strokeStyle,
+        strokeWidth: shape.strokeWidth,
+        backgroundColor: shape.backgroundColor,
+        id: id,
+        opacity: shape.opacity,
+        node: FocusNode(),
+      );
+      shapes.add(duplicate);
+    } else if (shape is TextFieldRect && shape.child is! MyTextfield) {
+      TextFieldRect duplicate = TextFieldRect(
+        scale: currentScale,
+        lT: shape.lT,
+        rB: shape.rB,
+        stroke: Colors.transparent,
+        strokeStyle: StrokeStyle.dashedBorder,
+        id: id,
+        node: FocusNode(),
+        fontSize: shape.fontSize,
+        textColor: shape.textColor,
+        fontFamily: shape.fontFamily,
+        alignment: shape.alignment,
+      );
+      duplicate.child = MyTextfield(
+        style: TextStyle(
+            color: duplicate.textColor.withOpacity(duplicate.opacity),
+            fontFamily: duplicate.fontFamily.getString(),
+            fontSize: duplicate.fontSize.getSize()),
+        node: FocusNode(),
+        controller: duplicate.controller,
+        convertTextFieldToText: convertTextFieldIntoText,
+      );
+      duplicate.controller.text = shape.controller.text;
+      shapes.add(duplicate);
+    } else if (shape is Line) {
+      Shapes duplicate = Line(
+        lT: shape.lT + const Offset(20, 40),
+        scale: shape.scale,
+        curve: ((shape.lT + const Offset(20, 40)) +
+                (shape.rB + const Offset(20, 40))) /
+            2,
+        rB: shape.rB + const Offset(20, 50),
+        stroke: shape.stroke,
+        strokeStyle: shape.strokeStyle,
+        strokeWidth: shape.strokeWidth,
+        id: id,
+        opacity: shape.opacity,
+        node: FocusNode(),
+      );
+      shapes.add(duplicate);
+    }
+    id += 1;
+    selectedContainerIndex = 3;
   }
 }
