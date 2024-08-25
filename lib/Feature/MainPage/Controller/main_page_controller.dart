@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:math' as math;
-import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:flutter/material.dart';
 import 'package:universal_html/html.dart' as html;
@@ -1382,8 +1381,6 @@ class MainPageController {
             } else if (selectedShape != x) {
               selectedShape = x;
               shapes[x].node!.requestFocus();
-            } else {
-              selectedShape = -1;
             }
             return; // Point found on the straight line
           }
@@ -1419,8 +1416,6 @@ class MainPageController {
               selectedShape = x;
             } else if (selectedContainerIndex == 8) {
               shapes.removeAt(x);
-              selectedShape = -1;
-            } else {
               selectedShape = -1;
             }
             return; // Point found near the curve
@@ -1563,8 +1558,8 @@ class MainPageController {
         ..style.display = 'none'
         ..click();
     } else {
-      await ImageGallerySaver.saveImage(bytes,
-          quality: 100, name: 'Muneeb\'s WhiteBoard');
+      // await ImageGallerySaver.saveImage(bytes,
+      //     quality: 100, name: 'Muneeb\'s WhiteBoard');
     }
   }
 
